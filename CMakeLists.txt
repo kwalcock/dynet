@@ -82,7 +82,7 @@ if(MSVC)
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-finite-math-only -Wall -Wno-missing-braces -std=c++11 -g")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -fno-omit-frame-pointer")
-  set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -Ofast -march=native")
+  set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -Ofast -march=x86-64")
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}
