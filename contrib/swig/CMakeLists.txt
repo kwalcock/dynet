@@ -9,7 +9,11 @@ include(UseSWIG)
 include_directories(${JNI_INCLUDE_DIRS})
 
 # Include dynet C++ sources
-include_directories("../../dynet")
+if(ENABLE_ZIP)
+  include_directories("../../dynet" "../../contrib/clulab" "../../contrib/zlib" "../../contrib/minizip")
+else(ENABLE_ZIP)
+  include_directories("../../dynet")
+endif(ENABLE_ZIP)
 
 # Set java output dir
 set(CMAKE_SWIG_OUTDIR "${CMAKE_CURRENT_BINARY_DIR}/java/src/edu/cmu/dynet")
@@ -26,6 +30,10 @@ if(WITH_CUDA_BACKEND)
 else(WITH_CUDA_BACKEND)
   set(CMAKE_SWIG_FLAGS -package edu.cmu.dynet.internal)
 endif(WITH_CUDA_BACKEND)
+
+if(ENABLE_ZIP)
+  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS} -DSWIG_USE_ZIP")
+endif(ENABLE_ZIP)
 
 # Run swig
 set_source_files_properties(dynet_swig.i PROPERTIES CPLUSPLUS ON)
@@ -119,6 +127,7 @@ add_jar(
     "${CMAKE_SWIG_OUTDIR}/Tensor.java"
     "${CMAKE_SWIG_OUTDIR}/TensorTools.java"
     "${CMAKE_SWIG_OUTDIR}/TextFileLoader.java"
+    "${CMAKE_SWIG_OUTDIR}/ZipFileLoader.java"
     "${CMAKE_SWIG_OUTDIR}/TextFileSaver.java"
     "${CMAKE_SWIG_OUTDIR}/Trainer.java"
     "${CMAKE_SWIG_OUTDIR}/TreeLSTMBuilder.java"
