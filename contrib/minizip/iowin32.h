@@ -11,7 +11,8 @@
 
 */
 
-#include <windows.h>
+// kwalcock: windows.h is simply not necessary here.
+//#include <windows.h>
 
 
 #ifdef __cplusplus
