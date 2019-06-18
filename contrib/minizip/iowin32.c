@@ -11,6 +11,9 @@
 
 */
 
+// kwalcock: This only applies to Windows.
+#if defined(_WIN32)
+
 #include <stdlib.h>
 
 #include "zlib.h"
@@ -25,14 +28,11 @@
 #define INVALID_SET_FILE_POINTER ((DWORD)-1)
 #endif
 
-// kwalcock: Include windows.h only if necessary, like when compiling under Windows.
-#if defined(_MSC_VER)
 #include <windows.h>
 // see Include/shared/winapifamily.h in the Windows Kit
 #if defined(WINAPI_FAMILY_PARTITION) && (!(defined(IOWIN32_USING_WINRT_API)))
 #if WINAPI_FAMILY_ONE_PARTITION(WINAPI_FAMILY, WINAPI_PARTITION_APP)
 #define IOWIN32_USING_WINRT_API 1
-#endif
 #endif
 #endif
 
@@ -463,3 +463,5 @@ void fill_win32_filefunc64W(zlib_filefunc64_def* pzlib_filefunc_def)
     pzlib_filefunc_def->zerror_file = win32_error_file_func;
     pzlib_filefunc_def->opaque = NULL;
 }
+
+#endif

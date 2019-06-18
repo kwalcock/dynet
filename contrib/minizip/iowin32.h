@@ -11,9 +11,10 @@
 
 */
 
-// kwalcock: windows.h is simply not necessary here.
-//#include <windows.h>
+// kwalcock: This only applies to Windows.
+#if defined(_WIN32)
 
+#include <windows.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,4 +27,6 @@ void fill_win32_filefunc64W OF((zlib_filefunc64_def* pzlib_filefunc_def));
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
