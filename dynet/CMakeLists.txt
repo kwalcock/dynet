@@ -70,6 +70,34 @@ if(ENABLE_BOOST)
   list(APPEND dynet_library_SRCS mp.cc)
 endif()
 
+if(ENABLE_ZIP)
+  list(APPEND dynet_library_SRCS
+    ../contrib/clulab/clulab_zip.cc
+
+    ../contrib/zlib/adler32.c
+    ../contrib/zlib/compress.c
+    ../contrib/zlib/crc32.c
+    ../contrib/zlib/deflate.c
+    ../contrib/zlib/gzclose.c
+    ../contrib/zlib/gzlib.c
+    ../contrib/zlib/gzread.c
+    ../contrib/zlib/gzwrite.c
+    ../contrib/zlib/infback.c
+    ../contrib/zlib/inffast.c
+    ../contrib/zlib/inflate.c
+    ../contrib/zlib/inftrees.c
+    ../contrib/zlib/trees.c
+    ../contrib/zlib/uncompr.c
+    ../contrib/zlib/zutil.c
+
+    ../contrib/minizip/ioapi.c
+    ../contrib/minizip/iowin32.c
+    ../contrib/minizip/mztools.c
+    ../contrib/minizip/unzip.c
+    ../contrib/minizip/zip.c
+  )
+endif()
+
 # Headers:
 set(dynet_library_HDRS
 aligned-mem-pool.h
@@ -161,7 +189,34 @@ weight-decay.h
 if(ENABLE_BOOST)
   list(APPEND dynet_library_HDRS mp.h)
 endif()
-  
+
+if(ENABLE_ZIP)
+  include_directories("../contrib/clulab" "../contrib/zlib" "../contrib/minizip")
+
+  list(APPEND dynet_library_HDRS
+    ../contrib/clulab/clulab_zip.h
+
+    ../contrib/zlib/crc32.h
+    ../contrib/zlib/deflate.h
+    ../contrib/zlib/gzguts.h
+    ../contrib/zlib/inffast.h
+    ../contrib/zlib/inffixed.h
+    ../contrib/zlib/inflate.h
+    ../contrib/zlib/inftrees.h
+    ../contrib/zlib/trees.h
+    ../contrib/zlib/zconf.h
+    ../contrib/zlib/zlib.h
+    ../contrib/zlib/zutil.h
+
+    ../contrib/minizip/crypt.h
+    ../contrib/minizip/ioapi.h
+    ../contrib/minizip/iowin32.h
+    ../contrib/minizip/mztools.h
+    ../contrib/minizip/unzip.h
+    ../contrib/minizip/zip.h
+  )
+endif()
+
 set(dynet_gpu_mergeable_SRCS
     nodes-activations
     nodes-affinetransform
