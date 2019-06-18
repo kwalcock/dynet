@@ -1,7 +1,7 @@
 #include <algorithm> // std::min
 #include <cstdlib> // atof
 #include <limits> // std::numeric_limits
-#include <memory> // make_unique, unique_ptr
+#include <memory> // unique_ptr
 
 #include <dynet/except.h>
 
@@ -58,7 +58,7 @@ void ZipReader::skip(size_t count) {
   // Find the maximum number that can be read with a reliable return value.
   const int maxAllocSize = std::min(count, static_cast<size_t>(std::numeric_limits<int>::max()));
   const int allocSize = std::min(maxAllocSize, 1024 * 1024);
-  std::unique_ptr<char> buffer = std::make_unique<char>(allocSize);
+  std::unique_ptr<char[]> buffer(new char[allocSize]);
   skip(count, allocSize, buffer.get());
  }
 }
