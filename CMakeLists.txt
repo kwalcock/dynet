@@ -193,6 +193,12 @@ if(ENABLE_CPP_EXAMPLES)
   add_subdirectory(examples)
 endif(ENABLE_CPP_EXAMPLES)
 
+option (ENABLE_ZIP "Add code for ZipFileLoader in order to read models from zip/jar files" OFF)
+
+if (ENABLE_ZIP)
+  message("-- Enabling ZIP")
+endif (ENABLE_ZIP)
+
 if(PYTHON)
   add_subdirectory(python)
 endif(PYTHON)
