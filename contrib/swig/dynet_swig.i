@@ -67,6 +67,8 @@
 #include "mem.h"
 #include "aligned-mem-pool.h"
 #include "devices.h"
+
+#include "clulab_zip.h" // TODO: Make this optional
 %}
 
 //
@@ -1286,7 +1288,15 @@ class TextFileSaver : public Saver {
   void save(const LookupParameter & param, const std::string & key = "") override;
 }; // class TextFileSaver
 
-class TextFileLoader : public Loader {
+class BaseFileLoader : public Loader {
+  virtual void basePopulate(DataReader & dataReader, ParameterCollection & model, const std::string & key);
+  virtual void basePopulate(DataReader & dataReader, Parameter & param, const std::string & key);
+  virtual void basePopulate(DataReader & dataReader, LookupParameter & lookup_param, const std::string & key);
+  virtual Parameter baseLoadParam(DataReader & dataReader, ParameterCollection & model, const std::string & key);
+  virtual LookupParameter baseLoadLookupParam(DataReader & dataReader, ParameterCollection & model, const std::string & key);
+};
+
+class TextFileLoader : public BaseFileLoader {
  public:
   TextFileLoader(const std::string & filename);
   virtual ~TextFileLoader() { }
@@ -1300,11 +1310,13 @@ class TextFileLoader : public Loader {
 
 }
 
-#ifdef SWIG_USE_ZIP
+//#ifdef SWIG_USE_ZIP // TODO make this optional
+
+using namespace dynet;
 
 namespace clulab {
 
-class ZipFileLoader : public Loader {
+class ZipFileLoader : public BaseFileLoader {
  public:
   ZipFileLoader(const std::string & filename, const std::string & zipname);
   virtual ~ZipFileLoader() { }
@@ -1317,4 +1329,4 @@ class ZipFileLoader : public Loader {
 
 }
 
-#endif
+//#endif

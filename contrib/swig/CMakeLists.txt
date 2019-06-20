@@ -9,11 +9,10 @@ include(UseSWIG)
 include_directories(${JNI_INCLUDE_DIRS})
 
 # Include dynet C++ sources
-if(ENABLE_ZIP)
-  include_directories("../../dynet" "../../contrib/clulab" "../../contrib/zlib" "../../contrib/minizip")
-else(ENABLE_ZIP)
-  include_directories("../../dynet")
-endif(ENABLE_ZIP)
+include_directories("../../dynet")
+if (ENABLE_ZIP)
+  include_directories("../../contrib/clulab" "../../contrib/zlib" "../../contrib/minizip")
+endif (ENABLE_ZIP)
 
 # Set java output dir
 set(CMAKE_SWIG_OUTDIR "${CMAKE_CURRENT_BINARY_DIR}/java/src/edu/cmu/dynet")
@@ -31,9 +30,9 @@ else(WITH_CUDA_BACKEND)
   set(CMAKE_SWIG_FLAGS -package edu.cmu.dynet.internal)
 endif(WITH_CUDA_BACKEND)
 
-if(ENABLE_ZIP)
-  set(CMAKE_SWIG_FLAGS "${CMAKE_SWIG_FLAGS} -DSWIG_USE_ZIP")
-endif(ENABLE_ZIP)
+if (ENABLE_ZIP)
+  set(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -DSWIG_USE_ZIP)
+endif (ENABLE_ZIP)
 
 # Run swig
 set_source_files_properties(dynet_swig.i PROPERTIES CPLUSPLUS ON)
@@ -62,6 +61,7 @@ add_jar(
     "${CMAKE_SWIG_OUTDIR}/AdagradTrainer.java"
     "${CMAKE_SWIG_OUTDIR}/AdamTrainer.java"
     "${CMAKE_SWIG_OUTDIR}/AmsgradTrainer.java"
+    "${CMAKE_SWIG_OUTDIR}/BaseFileLoader.java"
     "${CMAKE_SWIG_OUTDIR}/BidirectionalTreeLSTMBuilder.java"
     "${CMAKE_SWIG_OUTDIR}/ComputationGraph.java"
     "${CMAKE_SWIG_OUTDIR}/CoupledLSTMBuilder.java"
@@ -127,7 +127,6 @@ add_jar(
     "${CMAKE_SWIG_OUTDIR}/Tensor.java"
     "${CMAKE_SWIG_OUTDIR}/TensorTools.java"
     "${CMAKE_SWIG_OUTDIR}/TextFileLoader.java"
-    "${CMAKE_SWIG_OUTDIR}/ZipFileLoader.java"
     "${CMAKE_SWIG_OUTDIR}/TextFileSaver.java"
     "${CMAKE_SWIG_OUTDIR}/Trainer.java"
     "${CMAKE_SWIG_OUTDIR}/TreeLSTMBuilder.java"
@@ -135,7 +134,16 @@ add_jar(
     "${CMAKE_SWIG_OUTDIR}/UnsignedVector.java"
     "${CMAKE_SWIG_OUTDIR}/UnsignedVectorVector.java"
     "${CMAKE_SWIG_OUTDIR}/VanillaLSTMBuilder.java"
+    "${CMAKE_SWIG_OUTDIR}/ZipFileLoader.java"
 )
+
+#if (ENABLE_ZIP)
+#add_jar(
+#    dynet_swigJNI
+#    SOURCES
+#    "${CMAKE_SWIG_OUTDIR}/ZipFileLoader.java"
+#)
+#endif (ENABLE_ZIP)
 
 # Add dynamic library files into the Jar
 add_custom_target(
