@@ -137,14 +137,6 @@ add_jar(
     "${CMAKE_SWIG_OUTDIR}/ZipFileLoader.java"
 )
 
-#if (ENABLE_ZIP)
-#add_jar(
-#    dynet_swigJNI
-#    SOURCES
-#    "${CMAKE_SWIG_OUTDIR}/ZipFileLoader.java"
-#)
-#endif (ENABLE_ZIP)
-
 # Add dynamic library files into the Jar
 add_custom_target(
     dylib_into_jar

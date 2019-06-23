@@ -183,6 +183,8 @@ class StreamReader : public DataReader {
   }
 };
 
+BaseFileLoader::~BaseFileLoader() { }
+
 void BaseFileLoader::basePopulate(DataReader & dataReader, ParameterCollection & model, const std::string & key = "") {
   if(!dataReader) DYNET_RUNTIME_ERR("Could not read model from " << dataReader.getName());
   std::string line, type, name; // Know how much to expect of line

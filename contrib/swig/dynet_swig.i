@@ -68,7 +68,7 @@
 #include "aligned-mem-pool.h"
 #include "devices.h"
 
-#include "clulab_zip.h" // TODO: Make this optional
+#include "clulab-zip.h"
 %}
 
 //
@@ -1308,13 +1308,7 @@ class TextFileLoader : public BaseFileLoader {
   LookupParameter load_lookup_param(ParameterCollection & model, const std::string & key) override;
 }; // class TextFileLoader
 
-}
-
-//#ifdef SWIG_USE_ZIP // TODO make this optional
-
-using namespace dynet;
-
-namespace clulab {
+#ifdef SWIG_USE_ZIP
 
 class ZipFileLoader : public BaseFileLoader {
  public:
@@ -1329,4 +1323,4 @@ class ZipFileLoader : public BaseFileLoader {
 
 }
 
-//#endif
+#endif

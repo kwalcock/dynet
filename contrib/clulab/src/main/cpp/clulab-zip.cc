@@ -5,18 +5,22 @@
 
 #include <dynet/except.h>
 
-#include "clulab_zip.h"
+#include "clulab-zip.h"
 
-namespace clulab {
+namespace dynet {
 
 ZipReader::ZipReader(const std::string & filename, const std::string & zipname) : filename(filename),
- zipname(zipname), name(zipname + ":" + filename), zipFile(0), eof(false), fail(false) {
+  zipname(zipname), name(zipname + ":" + filename), zipFile(0), eof(false), fail(false) {
  zipFile = unzOpen64(zipname.c_str());
+ reset();
+}
+
+void ZipReader::reset() {
  fail = !(
   zipFile != 0 &&
   unzLocateFile(zipFile, filename.c_str(), 1) == UNZ_OK &&
   unzOpenCurrentFile(zipFile) == UNZ_OK
- );
+  );
 }
 
 ZipReader::~ZipReader() {
@@ -102,33 +106,33 @@ void ZipReader::getFloats(std::vector<float> & values) {
 }
 
 ZipFileLoader::ZipFileLoader(const std::string & filename, const std::string &zipname) :
- BaseFileLoader(), filename(filename), zipname(zipname) { }
+  BaseFileLoader(), filename(filename), zipname(zipname), zipReader(filename, zipname) { }
 
 ZipFileLoader::~ZipFileLoader() {}
 
 void ZipFileLoader::populate(ParameterCollection & model, const std::string & key) {
- ZipReader dataReader(filename, zipname);
- basePopulate(dataReader, model, key);
+ zipReader.reset();
+ basePopulate(zipReader, model, key);
 }
 
 void ZipFileLoader::populate(Parameter & param, const std::string & key) {
- ZipReader dataReader(filename, zipname);
- basePopulate(dataReader, param, key);
+ zipReader.reset();
+ basePopulate(zipReader, param, key);
 }
 
 void ZipFileLoader::populate(LookupParameter & lookup_param, const std::string & key) {
- ZipReader dataReader(filename, zipname);
- basePopulate(dataReader, lookup_param, key);
+ zipReader.reset();
+ basePopulate(zipReader, lookup_param, key);
 }
 
 Parameter ZipFileLoader::load_param(ParameterCollection & model, const std::string & key) {
- ZipReader dataReader(filename, zipname);
- return baseLoadParam(dataReader, model, key);
+ zipReader.reset();
+ return baseLoadParam(zipReader, model, key);
 }
 
 LookupParameter ZipFileLoader::load_lookup_param(ParameterCollection & model, const std::string & key) {
- ZipReader dataReader(filename, zipname);
- return baseLoadLookupParam(dataReader, model, key);
+ zipReader.reset();
+ return baseLoadLookupParam(zipReader, model, key);
 }
 
-} // namespace dynetv
+} // namespace dynet

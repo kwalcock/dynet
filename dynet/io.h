@@ -185,6 +185,8 @@ class DataReader {
 };
 
 class BaseFileLoader : public Loader {
+ public:
+  virtual ~BaseFileLoader();
  protected:
   virtual void basePopulate(DataReader & dataReader, ParameterCollection & model, const std::string & key);
   virtual void basePopulate(DataReader & dataReader, Parameter & param, const std::string & key);
@@ -194,17 +196,16 @@ class BaseFileLoader : public Loader {
 };
 
 class TextFileLoader : public BaseFileLoader {
- public:
+ private:
+  std::string dataname;
+public:
   TextFileLoader(const std::string & filename);
-  ~TextFileLoader() override;
+  ~TextFileLoader();
   void populate(ParameterCollection & model, const std::string & key = "") override;
   void populate(Parameter & param, const std::string & key = "") override;
   void populate(LookupParameter & lookup_param, const std::string & key = "") override;
   Parameter load_param(ParameterCollection & model, const std::string & key) override;
   LookupParameter load_lookup_param(ParameterCollection & model, const std::string & key) override;
-
- private:
-  std::string dataname;
 }; // class TextFileLoader
 
 } // namespace dynet
