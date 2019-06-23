@@ -11,7 +11,7 @@ include_directories(${JNI_INCLUDE_DIRS})
 # Include dynet C++ sources
 include_directories("../../dynet")
 if (ENABLE_ZIP)
-  include_directories("../../contrib/clulab" "../../contrib/zlib" "../../contrib/minizip")
+  include_directories("../../contrib/clulab/src/main/headers" "../../contrib/zlib" "../../contrib/minizip")
 endif (ENABLE_ZIP)
 
 # Set java output dir

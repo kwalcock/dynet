@@ -72,7 +72,7 @@ endif()
 
 if(ENABLE_ZIP)
   list(APPEND dynet_library_SRCS
-    ../contrib/clulab/clulab_zip.cc
+    ../contrib/clulab/src/main/cpp/clulab-zip.cc
 
     ../contrib/zlib/adler32.c
     ../contrib/zlib/compress.c
@@ -194,7 +194,7 @@ if(ENABLE_ZIP)
   include_directories("../contrib/clulab" "../contrib/zlib" "../contrib/minizip")
 
   list(APPEND dynet_library_HDRS
-    ../contrib/clulab/clulab_zip.h
+    ../contrib/clulab/src/main/headers/clulab-zip.h
 
     ../contrib/zlib/crc32.h
     ../contrib/zlib/deflate.h
