@@ -109,7 +109,7 @@ set(SWIG_JAVA_FILES
 )
 
 if(ENABLE_ZIP)
-include(../clulab/src/main/cmake/swig.txt)
+  include(../clulab/src/main/cmake/swig.txt)
 endif(ENABLE_ZIP)
 
 # Run swig
@@ -135,7 +135,7 @@ endif(WITH_CUDA_BACKEND)
 add_jar(
     dynet_swigJNI
     SOURCES
-    SWIG_JAVA_FILES
+    ${SWIG_JAVA_FILES}
 )
 
 # Add dynamic library files into the Jar
