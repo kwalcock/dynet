@@ -1,0 +1,13 @@
+if(ENABLE_ZIP)
+  include_directories(
+    "../clulab/src/main/headers"
+    "../zlib"
+    "../minizip"
+  )
+
+  set(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -DSWIG_USE_ZIP)
+
+  list(APPEND SWIG_JAVA_FILES
+    "${CMAKE_SWIG_OUTDIR}/ZipFileLoader.java"
+  )
+endif(ENABLE_ZIP)
