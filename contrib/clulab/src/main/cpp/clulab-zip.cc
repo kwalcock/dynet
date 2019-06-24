@@ -9,8 +9,8 @@
 
 namespace dynet {
 
-ZipReader::ZipReader(const std::string & filename, const std::string & zipname) : filename(filename),
-  zipname(zipname), name(zipname + ":" + filename), zipFile(0), eof(false), fail(false) {
+ZipReader::ZipReader(const std::string & filename_, const std::string & zipname_) : filename(filename_),
+  zipname(zipname_), name(zipname + ":" + filename), zipFile(0), eof(false), fail(false) {
  zipFile = unzOpen64(zipname.c_str());
  reset();
 }
