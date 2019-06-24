@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 if(ENABLE_ZIP)
-  include(../contrib/clulab/src/main/cmake/swig.txt)
+  include(../contrib/clulab/src/main/cmake/examples.txt)
 endif(ENABLE_ZIP)
 
 macro(ADD_EXAMPLE FOLDER TARGET)

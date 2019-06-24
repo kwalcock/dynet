@@ -31,12 +31,12 @@ class ClulabModel {
   LookupParameter charLookupParameters;
   LSTMBuilder charFwBuilder;
   LSTMBuilder charBwBuilder;
- 
+
   ClulabModel() :
     lookupParameters(parameters.add_lookup_parameters(w2iSize, { embeddingDim })),
     fwBuilder(LSTMBuilder(RNN_LAYERS, embeddingSize, RNN_STATE_SIZE, parameters)),
     bwBuilder(LSTMBuilder(RNN_LAYERS, embeddingSize, RNN_STATE_SIZE, parameters)),
-    H(parameters.add_parameters({NONLINEAR_SIZE, 2 * RNN_STATE_SIZE})),
+    H(parameters.add_parameters({ NONLINEAR_SIZE, 2 * RNN_STATE_SIZE })),
     O(parameters.add_parameters({ t2iSize, NONLINEAR_SIZE })),
     T(parameters.add_lookup_parameters(t2iSize, { NONLINEAR_SIZE })),
     charLookupParameters(parameters.add_lookup_parameters(c2iSize, { CHAR_EMBEDDING_SIZE })),
@@ -66,12 +66,12 @@ void help(int& argc, char**& argv) {
 
 int main() {
  int argc = 2;
- char *args[] = {
+ const char *args[] = {
   "--dynet-seed",
   "2522620396",
   nullptr
  };
- char **argv = &args[0];
+ char **argv = const_cast<char**>(&args[0]);
  dynet::initialize(argc, argv);
 
  string origFilename = "model.rnn";
