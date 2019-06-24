@@ -28,7 +28,7 @@ if(ENABLE_RELOCATABLE)
   message("-- Enabling RELOCATABLE")
 endif(ENABLE_RELOCATABLE)
 
-option (ENABLE_ZIP "Add code for ZipFileLoader in order to read models from zip/jar files" OFF)
+option(ENABLE_ZIP "Add code for ZipFileLoader in order to read models from zip/jar files" OFF)
 
 if(ENABLE_ZIP)
   message("-- Enabling ZIP")
