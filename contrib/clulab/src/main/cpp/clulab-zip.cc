@@ -16,8 +16,10 @@ ZipReader::ZipReader(const std::string & filename_, const std::string & zipname_
 }
 
 void ZipReader::reset() {
+ std::cout << "filename: " << filename << std::endl;
+ std::cout << "filename: " << filename.c_str() << std::endl;
  fail = !(
-  zipFile != 0 &&
+ zipFile != 0 &&
   unzLocateFile(zipFile, filename.c_str(), 1) == UNZ_OK &&
   unzOpenCurrentFile(zipFile) == UNZ_OK
   );
