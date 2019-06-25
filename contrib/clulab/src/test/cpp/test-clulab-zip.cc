@@ -20,34 +20,41 @@ const unsigned embeddingDim = 300;
 const unsigned embeddingSize = embeddingDim + 2 * CHAR_RNN_STATE_SIZE;
 
 class ClulabModel {
- public:
-  ParameterCollection parameters;
-  LookupParameter lookupParameters;
-  LSTMBuilder fwBuilder;
-  LSTMBuilder bwBuilder;
-  Parameter H;
-  Parameter O;
-  LookupParameter T;
-  LookupParameter charLookupParameters;
-  LSTMBuilder charFwBuilder;
-  LSTMBuilder charBwBuilder;
+public:
+ ParameterCollection parameters;
+ LookupParameter lookupParameters;
+ LSTMBuilder fwBuilder;
+ LSTMBuilder bwBuilder;
+ Parameter H;
+ Parameter O;
+ LookupParameter T;
+ LookupParameter charLookupParameters;
+ LSTMBuilder charFwBuilder;
+ LSTMBuilder charBwBuilder;
 
-  ClulabModel() :
-    lookupParameters(parameters.add_lookup_parameters(w2iSize, { embeddingDim })),
-    fwBuilder(LSTMBuilder(RNN_LAYERS, embeddingSize, RNN_STATE_SIZE, parameters)),
-    bwBuilder(LSTMBuilder(RNN_LAYERS, embeddingSize, RNN_STATE_SIZE, parameters)),
-    H(parameters.add_parameters({ NONLINEAR_SIZE, 2 * RNN_STATE_SIZE })),
-    O(parameters.add_parameters({ t2iSize, NONLINEAR_SIZE })),
-    T(parameters.add_lookup_parameters(t2iSize, { NONLINEAR_SIZE })),
-    charLookupParameters(parameters.add_lookup_parameters(c2iSize, { CHAR_EMBEDDING_SIZE })),
-    charFwBuilder(LSTMBuilder(CHAR_RNN_LAYERS, CHAR_EMBEDDING_SIZE, CHAR_RNN_STATE_SIZE, parameters)),
-    charBwBuilder(LSTMBuilder(CHAR_RNN_LAYERS, CHAR_EMBEDDING_SIZE, CHAR_RNN_STATE_SIZE, parameters)) {
-  }
+ ClulabModel() :
+  lookupParameters(parameters.add_lookup_parameters(w2iSize, { embeddingDim })),
+  fwBuilder(LSTMBuilder(RNN_LAYERS, embeddingSize, RNN_STATE_SIZE, parameters)),
+  bwBuilder(LSTMBuilder(RNN_LAYERS, embeddingSize, RNN_STATE_SIZE, parameters)),
+  H(parameters.add_parameters({ NONLINEAR_SIZE, 2 * RNN_STATE_SIZE })),
+  O(parameters.add_parameters({ t2iSize, NONLINEAR_SIZE })),
+  T(parameters.add_lookup_parameters(t2iSize, { NONLINEAR_SIZE })),
+  charLookupParameters(parameters.add_lookup_parameters(c2iSize, { CHAR_EMBEDDING_SIZE })),
+  charFwBuilder(LSTMBuilder(CHAR_RNN_LAYERS, CHAR_EMBEDDING_SIZE, CHAR_RNN_STATE_SIZE, parameters)),
+  charBwBuilder(LSTMBuilder(CHAR_RNN_LAYERS, CHAR_EMBEDDING_SIZE, CHAR_RNN_STATE_SIZE, parameters)) {
+ }
 };
 
 void WriteToFile(string& filename, ParameterCollection& parameters, string& key) {
  TextFileSaver saver(filename);
  saver.save(parameters, key);
+}
+
+void WriteToFile(string& filename, ParameterCollection& parametersA, string& keyA,
+  ParameterCollection& parametersB, string& keyB) {
+ TextFileSaver saver(filename);
+ saver.save(parametersA, keyA);
+ saver.save(parametersB, keyB);
 }
 
 void ReadFromFile(string& filename, ParameterCollection& parameters, string& key) {
@@ -74,25 +81,76 @@ int main() {
  char **argv = const_cast<char**>(&args[0]);
  dynet::initialize(argc, argv);
 
- string origFilename = "model.rnn";
- string zipFilename = "model.jar";
- string copyFromTextFilename = "modelTextCopy.rnn";
- string copyFromZipFilename = "modelZipCopy.rnn";
- string key = "/key";
+ string origFilenameA = "modelA.rnn";
+ string origFilenameB = "modelB.rnn";
+ string origFilenameAB = "modelAB.rnn";
+ string zipFilenameA = "modelA.zip";
+ string zipFilenameB = "modelB.zip";
+ string zipFilenameAB = "modelAB.zip";
+ string copyFromTextFilenameA1 = "modelTextCopyA1.rnn";
+ string copyFromTextFilenameA2 = "modelTextCopyA2.rnn";
+ string copyFromTextFilenameB1 = "modelTextCopyB1.rnn";
+ string copyFromTextFilenameB2 = "modelTextCopyB2.rnn";
+ string copyFromTextFilenameAB = "modelTextCopyAB.rnn";
+ string copyFromZipFilenameA1 = "modelZipCopyA1.rnn";
+ string copyFromZipFilenameA2 = "modelZipCopyA2.rnn";
+ string copyFromZipFilenameB1 = "modelZipCopyB1.rnn";
+ string copyFromZipFilenameB2 = "modelZipCopyB2.rnn";
+ string copyFromZipFilenameAB = "modelZipCopyAB.rnn";
+ string keyA = "/keyA";
+ string keyB = "/keyB";
 
- ClulabModel model;
+ // There are now two different models.  They should be different
+ // from one another because of the random initialization.
+ ClulabModel modelA;
+ ClulabModel modelB;
 
- WriteToFile(origFilename, model.parameters, key);
+ // They are stored both separately and together.
+ WriteToFile(origFilenameA, modelA.parameters, keyA);
+ WriteToFile(origFilenameB, modelB.parameters, keyB);
+ WriteToFile(origFilenameAB, modelA.parameters, keyA, modelB.parameters, keyB);
 
- // Pause here and zip the file.
+ std::cout
+  << "Please zip the files as such: " << std::endl
+  << "  " << origFilenameA << "  -> " << zipFilenameA << std::endl
+  << "  " << origFilenameB << "  -> " << zipFilenameB << std::endl
+  << "  " << origFilenameAB << " -> " << zipFilenameAB << std::endl
+  << "and enter a string to continue.";
 
- ClulabModel copyFromText;
- ReadFromFile(origFilename, copyFromText.parameters, key);
+ std::string response;
+ std::cin >> response;
 
- ClulabModel copyFromZip;
- ReadFromZip(origFilename, zipFilename, copyFromZip.parameters, key);
+ ClulabModel copyFromTextA1;
+ ReadFromFile(origFilenameA, copyFromTextA1.parameters, keyA);
+ ClulabModel copyFromTextB1;
+ ReadFromFile(origFilenameB, copyFromTextB1.parameters, keyB);
+ // These should be the same as their 1 counterparts.
+ ClulabModel copyFromTextA2;
+ ReadFromFile(origFilenameAB, copyFromTextA2.parameters, keyA);
+ ClulabModel copyFromTextB2;
+ ReadFromFile(origFilenameAB, copyFromTextB2.parameters, keyB);
 
- WriteToFile(copyFromTextFilename, copyFromText.parameters, key);
+ ClulabModel copyFromZipA1;
+ ReadFromZip(origFilenameA, zipFilenameA, copyFromZipA1.parameters, keyA);
+ ClulabModel copyFromZipB1;
+ ReadFromZip(origFilenameB, zipFilenameB, copyFromZipB1.parameters, keyB);
+ // These should be the same as their 1 counterparts.
+ ClulabModel copyFromZipA2;
+ ReadFromZip(origFilenameAB, zipFilenameAB, copyFromZipA2.parameters, keyA);
+ ClulabModel copyFromZipB2;
+ ReadFromZip(origFilenameAB, zipFilenameAB, copyFromZipB2.parameters, keyB);
 
- WriteToFile(copyFromZipFilename, copyFromZip.parameters, key);
+ WriteToFile(copyFromTextFilenameA1, copyFromTextA1.parameters, keyA);
+ WriteToFile(copyFromTextFilenameA2, copyFromTextA2.parameters, keyA);
+ WriteToFile(copyFromTextFilenameB1, copyFromTextB1.parameters, keyB);
+ WriteToFile(copyFromTextFilenameB2, copyFromTextB2.parameters, keyB);
+
+ WriteToFile(copyFromZipFilenameA1, copyFromZipA1.parameters, keyA);
+ WriteToFile(copyFromZipFilenameA2, copyFromZipA2.parameters, keyA);
+ WriteToFile(copyFromZipFilenameB1, copyFromZipB1.parameters, keyB);
+ WriteToFile(copyFromZipFilenameB2, copyFromZipB2.parameters, keyB);
+
+ // All the A files should be the same as each other.
+ // All the B files should be the same as each other.
+ // The A and B files should not be the same.
 }

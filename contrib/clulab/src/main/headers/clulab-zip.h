@@ -18,6 +18,10 @@ class ZipReader : public DataReader {
   const std::string zipname;
   const std::string name;
   unzFile zipFile;
+  // Resets are tracked because ! should be supported
+  // immediately after construction plus before other
+  // operations without doubling up on the resets.
+  bool isReset;
   bool eof;
   bool fail;
 

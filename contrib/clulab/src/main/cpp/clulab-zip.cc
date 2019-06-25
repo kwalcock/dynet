@@ -10,29 +10,33 @@
 namespace dynet {
 
 ZipReader::ZipReader(const std::string filename, const std::string zipname) : filename(filename),
-  zipname(zipname), name(zipname + ":" + filename), zipFile(0), eof(false), fail(false) {
+  zipname(zipname), name(zipname + ":" + filename), zipFile(0), isReset(false), eof(false), fail(false) {
  zipFile = unzOpen64(zipname.c_str());
  reset();
 }
 
 void ZipReader::reset() {
- fail = !(
-  zipFile != 0 &&
-  unzLocateFile(zipFile, filename.c_str(), 1) == UNZ_OK &&
-  unzOpenCurrentFile(zipFile) == UNZ_OK
- );
+ if (!isReset) {
+  isReset = true;
+  eof = false;
+  fail = zipFile == 0 ||
+    unzLocateFile(zipFile, filename.c_str(), 1) != UNZ_OK ||
+    unzOpenCurrentFile(zipFile) != UNZ_OK;
+ }
 }
 
 ZipReader::~ZipReader() {
  if (zipFile != 0)
   unzClose(zipFile);
  zipFile = 0;
+ isReset = false;
 }
 
 void ZipReader::skip(size_t count, int allocSize, char * buffer) {
+ isReset = false;
  while (count > 0) {
   int readSize = std::min(count, static_cast<size_t>(allocSize));
-  int readResult = unzReadCurrentFile(zipFile, buffer, count);
+  int readResult = unzReadCurrentFile(zipFile, buffer, readSize);
   // <0 is negative of error code.
   //  0 is eof, which isn't expected.
   // >0 is OK, but here we're insisting on filling the entire buffer.
@@ -45,7 +49,7 @@ void ZipReader::skip(size_t count, int allocSize, char * buffer) {
 }
 
 bool ZipReader::operator!() {
- return fail || eof;
+ return zipFile == 0 || fail || eof;
 }
 
 const std::string & ZipReader::getName() {
@@ -53,6 +57,7 @@ const std::string & ZipReader::getName() {
 }
 
 void ZipReader::skip(size_t count) {
+ isReset = false;
  const int staticSize = 1024;
  if (count <= staticSize) {
   char buffer[staticSize];
@@ -68,6 +73,7 @@ void ZipReader::skip(size_t count) {
 }
 
 bool ZipReader::getLine(std::string & line) {
+ isReset = false;
  char buffer;
  line.clear();
  while (true) {
@@ -88,6 +94,7 @@ bool ZipReader::getLine(std::string & line) {
 }
 
 void ZipReader::getFloats(std::vector<float> & values) {
+ isReset = false;
  std::vector<float>::size_type count = values.size();
  // This is pedantic, but see also skip().  This will include the trailing space.
  const int allocSize = FLOAT32_WIDTH;
