@@ -115,7 +115,7 @@ int main() {
   << "  " << origFilenameA << "  -> " << zipFilenameA << std::endl
   << "  " << origFilenameB << "  -> " << zipFilenameB << std::endl
   << "  " << origFilenameAB << " -> " << zipFilenameAB << std::endl
-  << "and enter a string to continue.";
+  << "and enter a string to continue. ";
 
  std::string response;
  std::cin >> response;
@@ -150,7 +150,11 @@ int main() {
  WriteToFile(copyFromZipFilenameB1, copyFromZipB1.parameters, keyB);
  WriteToFile(copyFromZipFilenameB2, copyFromZipB2.parameters, keyB);
 
- // All the A files should be the same as each other.
- // All the B files should be the same as each other.
- // The A and B files should not be the same.
+ std::cout << std::endl
+   << "All the A files should be the same as each other." << std::endl
+   << "All the B files should be the same as each other." << std::endl
+   << "The A and B files should not be the same." << std::endl
+   << "Enter a string to continue. ";
+
+ std::cin >> response;
 }
