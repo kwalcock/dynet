@@ -11,6 +11,9 @@ namespace dynet {
 
 class ZipReader : public DataReader {
  protected:
+  // For some reason a reference (&) does not work
+  // here for Linux on filename or zipname.
+  // The program will crash in reset on a strlen.
   const std::string filename;
   const std::string zipname;
   const std::string name;
