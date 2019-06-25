@@ -11,8 +11,8 @@ namespace dynet {
 
 class ZipReader : public DataReader {
  protected:
-  const std::string & filename;
-  const std::string & zipname;
+  const std::string filename;
+  const std::string zipname;
   const std::string name;
   unzFile zipFile;
   bool eof;
@@ -20,7 +20,7 @@ class ZipReader : public DataReader {
 
   void skip(size_t count, int allocSize, char * buffer);
  public:
-  ZipReader(const std::string & filename, const std::string & zipname);
+  ZipReader(const std::string filename, const std::string zipname);
   virtual ~ZipReader();
   void reset();
   bool operator!() override;

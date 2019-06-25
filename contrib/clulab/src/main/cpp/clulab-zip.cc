@@ -9,7 +9,7 @@
 
 namespace dynet {
 
-ZipReader::ZipReader(const std::string & filename_, const std::string & zipname_) : filename(filename_),
+ZipReader::ZipReader(const std::string filename_, const std::string zipname_) : filename(filename_),
   zipname(zipname_), name(zipname + ":" + filename), zipFile(0), eof(false), fail(false) {
  zipFile = unzOpen64(zipname.c_str());
  reset();
@@ -18,6 +18,8 @@ ZipReader::ZipReader(const std::string & filename_, const std::string & zipname_
 void ZipReader::reset() {
  std::cout << "filename: " << filename << std::endl;
  std::cout << "filename: " << filename.c_str() << std::endl;
+ int test;
+ std::cin >> test;
  fail = !(
  zipFile != 0 &&
   unzLocateFile(zipFile, filename.c_str(), 1) == UNZ_OK &&
