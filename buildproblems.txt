@@ -1,0 +1,6 @@
+cmake .. -DSCALA_VERSION=2.12.4 -DEIGEN3_INCLUDE_DIR=../../eigen -DENABLE_CPP_EXAMPLES=ON -DENABLE_SWIG=ON -DENABLE_ZIP=ON
+
+Warning when building dynet_swig in VS:
+
+3>D:\Users\kwa\Documents\MyData\Projects\dynetbuildtest\dynet\contrib\swig\dynet_swig.i(333): warning 520: Base class 'dynet::ParameterStorageBase' of 'ParameterStorage' is not similarly marked as a smart pointer.
+3>D:\Users\kwa\Documents\MyData\Projects\dynetbuildtest\dynet\contrib\swig\dynet_swig.i(350): warning 520: Base class 'dynet::ParameterStorageBase' of 'LookupParameterStorage' is not similarly marked as a smart pointer.

@@ -105,6 +105,7 @@ VECTORCONSTRUCTOR(std::vector<dynet::Parameter>, ParameterVector, ParameterVecto
 %include "cpointer.i"
 %include <std_shared_ptr.i>
 
+%shared_ptr(dynet::ParameterStorageBase)
 %shared_ptr(dynet::ParameterStorage)
 %shared_ptr(dynet::LookupParameterStorage)
 
@@ -322,9 +323,12 @@ private:
 
 struct ParameterStorageBase {
   virtual void scale_parameters(float a) = 0;
+  virtual void scale_gradient(float a) = 0; // kwa
   virtual void zero() = 0;
   virtual void squared_l2norm(float* sqnorm) const = 0;
   virtual void g_squared_l2norm(float* sqnorm) const = 0;
+  virtual bool is_updated() const = 0; // kwa
+  virtual bool has_grad() const = 0; // kwa
   virtual size_t size() const = 0;
   virtual ~ParameterStorageBase();
 };
