@@ -84,6 +84,7 @@ struct ParameterStorageBase {
    */
   virtual size_t size() const = 0;
   virtual ~ParameterStorageBase();
+  ParameterStorageBase();
 }; // struct ParameterStorageBase
 
 // represents parameters (e.g., a weight matrix) that will be optimized
@@ -146,7 +147,7 @@ struct ParameterStorage : public ParameterStorageBase {
   bool nonzero_grad; /**< Whether the gradient is zero */
   ParameterCollection* owner; /**< Pointer to the collection that "owns" this parameter */
   Device *device;
-
+  virtual ~ParameterStorage();
 protected:
   ParameterStorage() : updated(true), owner(nullptr) {}
   explicit ParameterStorage(const Dim& d, float scale,

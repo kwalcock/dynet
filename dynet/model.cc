@@ -50,7 +50,17 @@ namespace dynet {
 // CPU only functions
 #ifndef __CUDACC__
 
-ParameterStorageBase::~ParameterStorageBase() {}
+ParameterStorageBase::ParameterStorageBase() {
+   std::cout << "Updated Constructing ParameterStorageBase at " << (ParameterStorageBase *) this << std::endl << std::flush;
+}
+
+ParameterStorageBase::~ParameterStorageBase() {
+   std::cout << "Deleting ParameterStorageBase at " << (ParameterStorageBase *) this << std::endl << std::flush;
+}
+
+ParameterStorage::~ParameterStorage() {
+   std::cout << "Deleting ParameterStorage at " << this << " from base " << (ParameterStorageBase *) this << std::endl << std::flush;
+}
 
 ParameterStorage::ParameterStorage(const Dim& d, float scale, const std::string & name, Device *dev)
     : name(name), dim(d), updated(true), nonzero_grad(false), owner(nullptr), device(dev) {
@@ -74,6 +84,7 @@ ParameterStorage::ParameterStorage(const Dim& d, float scale, const std::string 
     ParameterInitUniform init(scale);
     init.initialize_params(values);
   }
+   std::cout << "Constructing ParameterStorage at " << (ParameterStorage *) this << std::endl;
 }
 
 ParameterStorage::ParameterStorage(const Dim& d, const ParameterInit & init,
@@ -93,6 +104,7 @@ ParameterStorage::ParameterStorage(const Dim& d, const ParameterInit & init,
   device->allocate_tensor(DeviceMempool::PS, g);
   TensorTools::zero(g);
   init.initialize_params(values);
+  std::cout << "Constructing ParameterStorage at " << (ParameterStorage *) this << std::endl;
 }
 
 size_t ParameterStorage::size() const { return dim.size(); }
