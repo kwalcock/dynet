@@ -18,6 +18,15 @@ python/dyNET.egg-info/
 #data
 rnnlm/ptb-mikolov/
 
+# Cruft
+*.class
+*.cache
+*.xml
+*.log
+*.properties
+contrib/swig/project/target/**
+
+
 # Python temporary files
 *.pyc
 

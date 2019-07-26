@@ -1287,7 +1287,15 @@ class TextFileSaver : public Saver {
   void save(const LookupParameter & param, const std::string & key = "") override;
 }; // class TextFileSaver
 
-class TextFileLoader : public Loader {
+class BaseFileLoader : public Loader {
+  virtual void basePopulate(DataReader & dataReader, ParameterCollection & model, const std::string & key);
+  virtual void basePopulate(DataReader & dataReader, Parameter & param, const std::string & key);
+  virtual void basePopulate(DataReader & dataReader, LookupParameter & lookup_param, const std::string & key);
+  virtual Parameter baseLoadParam(DataReader & dataReader, ParameterCollection & model, const std::string & key);
+  virtual LookupParameter baseLoadLookupParam(DataReader & dataReader, ParameterCollection & model, const std::string & key);
+};
+
+class TextFileLoader : public BaseFileLoader {
  public:
   TextFileLoader(const std::string & filename);
   virtual ~TextFileLoader() { }
@@ -1299,4 +1307,7 @@ class TextFileLoader : public Loader {
   LookupParameter load_lookup_param(ParameterCollection & model, const std::string & key) override;
 }; // class TextFileLoader
 
+%include "../clulab/src/main/swig/zip.i"
+
 }
+

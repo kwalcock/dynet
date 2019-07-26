@@ -1,0 +1,7 @@
+if(ENABLE_ZIP)
+  include_directories(
+    "../contrib/clulab/src/main/headers"
+    "../contrib/zlib"
+    "../contrib/minizip"
+  )
+endif(ENABLE_ZIP)

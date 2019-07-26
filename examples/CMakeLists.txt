@@ -1,5 +1,9 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
+if(ENABLE_ZIP)
+  include(../contrib/clulab/src/main/cmake/examples.txt)
+endif(ENABLE_ZIP)
+
 macro(ADD_EXAMPLE FOLDER TARGET)
   include_directories(${PROJECT_SOURCE_DIR}/examples/cpp-utils)
   if(EXISTS ${PROJECT_SOURCE_DIR}/examples/${FOLDER}/train_${TARGET}.cc)

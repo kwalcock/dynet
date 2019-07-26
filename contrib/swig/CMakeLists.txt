@@ -27,33 +27,13 @@ else(WITH_CUDA_BACKEND)
   set(CMAKE_SWIG_FLAGS -package edu.cmu.dynet.internal)
 endif(WITH_CUDA_BACKEND)
 
-# Run swig
-set_source_files_properties(dynet_swig.i PROPERTIES CPLUSPLUS ON)
-swig_add_module(dynet_swig java dynet_swig.i)
-
-# add C++ compiler flags
-if(WITH_CUDA_BACKEND)
-  set_target_properties(dynet_swig PROPERTIES
-                        COMPILE_DEFINITIONS HAVE_CUDA)
-endif(WITH_CUDA_BACKEND)
-
-# Link with dynet library
-if(WITH_CUDA_BACKEND)
-  MESSAGE("-- swig link with GPU library")
-  swig_link_libraries(dynet_swig dynet)
-else(WITH_CUDA_BACKEND)
-  MESSAGE("-- swig link with CPU library")
-  swig_link_libraries(dynet_swig dynet)
-endif(WITH_CUDA_BACKEND)
-
-# Create jar file
-add_jar(
-    dynet_swigJNI
-    SOURCES
+# This has been moved up for the sake of clualb contribs.
+set(SWIG_JAVA_FILES
     "${CMAKE_SWIG_OUTDIR}/AdadeltaTrainer.java"
     "${CMAKE_SWIG_OUTDIR}/AdagradTrainer.java"
     "${CMAKE_SWIG_OUTDIR}/AdamTrainer.java"
     "${CMAKE_SWIG_OUTDIR}/AmsgradTrainer.java"
+    "${CMAKE_SWIG_OUTDIR}/BaseFileLoader.java"
     "${CMAKE_SWIG_OUTDIR}/BidirectionalTreeLSTMBuilder.java"
     "${CMAKE_SWIG_OUTDIR}/ComputationGraph.java"
     "${CMAKE_SWIG_OUTDIR}/CoupledLSTMBuilder.java"
@@ -82,7 +62,7 @@ add_jar(
     "${CMAKE_SWIG_OUTDIR}/LookupParameterStorage.java"
     "${CMAKE_SWIG_OUTDIR}/LookupParameterStorageVector.java"
     "${CMAKE_SWIG_OUTDIR}/MomentumSGDTrainer.java"
-	"${CMAKE_SWIG_OUTDIR}/NaryTreeLSTMBuilder.java"
+    "${CMAKE_SWIG_OUTDIR}/NaryTreeLSTMBuilder.java"
     "${CMAKE_SWIG_OUTDIR}/Parameter.java"
     "${CMAKE_SWIG_OUTDIR}/ParameterCollection.java"
     "${CMAKE_SWIG_OUTDIR}/ParameterInit.java"
@@ -122,10 +102,40 @@ add_jar(
     "${CMAKE_SWIG_OUTDIR}/TextFileSaver.java"
     "${CMAKE_SWIG_OUTDIR}/Trainer.java"
     "${CMAKE_SWIG_OUTDIR}/TreeLSTMBuilder.java"
-	"${CMAKE_SWIG_OUTDIR}/UnidirectionalTreeLSTMBuilder.java"
+    "${CMAKE_SWIG_OUTDIR}/UnidirectionalTreeLSTMBuilder.java"
     "${CMAKE_SWIG_OUTDIR}/UnsignedVector.java"
     "${CMAKE_SWIG_OUTDIR}/UnsignedVectorVector.java"
     "${CMAKE_SWIG_OUTDIR}/VanillaLSTMBuilder.java"
+)
+
+if(ENABLE_ZIP)
+  include(../clulab/src/main/cmake/swig.txt)
+endif(ENABLE_ZIP)
+
+# Run swig
+set_source_files_properties(dynet_swig.i PROPERTIES CPLUSPLUS ON)
+swig_add_module(dynet_swig java dynet_swig.i)
+
+# add C++ compiler flags
+if(WITH_CUDA_BACKEND)
+  set_target_properties(dynet_swig PROPERTIES
+                        COMPILE_DEFINITIONS HAVE_CUDA)
+endif(WITH_CUDA_BACKEND)
+
+# Link with dynet library
+if(WITH_CUDA_BACKEND)
+  MESSAGE("-- swig link with GPU library")
+  swig_link_libraries(dynet_swig dynet)
+else(WITH_CUDA_BACKEND)
+  MESSAGE("-- swig link with CPU library")
+  swig_link_libraries(dynet_swig dynet)
+endif(WITH_CUDA_BACKEND)
+
+# Create jar file
+add_jar(
+    dynet_swigJNI
+    SOURCES
+    ${SWIG_JAVA_FILES}
 )
 
 # Add dynamic library files into the Jar

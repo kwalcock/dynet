@@ -16,6 +16,24 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 #       suit our model of not installing the library most of the time.
 set(CMAKE_MACOSX_RPATH 0)
 
+option(ENABLE_NONNATIVE "Compile for general processor rather than native processor" OFF)
+
+if(ENABLE_NONNATIVE)
+  message("-- Enabling NONNATIVE")
+endif(ENABLE_NONNATIVE)
+
+option(ENABLE_RELOCATABLE "Link code in a relocatable way so that executable files can be moved" OFF)
+
+if(ENABLE_RELOCATABLE)
+  message("-- Enabling RELOCATABLE")
+endif(ENABLE_RELOCATABLE)
+
+option(ENABLE_ZIP "Add code for ZipFileLoader in order to read models from zip/jar files" OFF)
+
+if(ENABLE_ZIP)
+  message("-- Enabling ZIP")
+endif(ENABLE_ZIP)
+
 function(find_mkl)
   set(MKL_ARCH intel64)
   find_path(MKL_INCLUDE_DIR mkl.h
@@ -71,6 +89,7 @@ if(NOT DEFINED GPU_NUMFILES)
 endif()
 
 
+
 ######## Platform-specific options
 if(WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX")   # Disable min/max macros in windef.h
@@ -82,7 +101,11 @@ if(MSVC)
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-finite-math-only -Wall -Wno-missing-braces -std=c++11 -g")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -fno-omit-frame-pointer")
-  set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -Ofast -march=x86-64")
+  if(ENABLE_NONNATIVE)
+    set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -Ofast -march=x86-64")
+  else()
+    set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -Ofast -march=native")
+  endif()
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}

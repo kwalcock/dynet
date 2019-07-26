@@ -16,6 +16,17 @@
 #include "dynet/except.h"
 #include "dynet/str-util.h"
 
+// Precision required not to lose accuracy when serializing float32 to text.
+// We should probably use std::hexfloat, but it's not supported by some
+// older incomplete implementations of C++11.
+
+// A single float is "[+-]X.YYYe[+-]ZZZ " where the length of YYY is
+// FLOAT32_PRECISION, and length of ZZZ is FLOAT32_EXPONENT.
+static const int FLOAT32_PRECISION = 8;
+static const int FLOAT32_EXPONENT = 2;
+// This 6 is for leading [+-], X, decimal point, e, trailing [+-], and trailing space.
+static const int FLOAT32_WIDTH = FLOAT32_PRECISION + FLOAT32_EXPONENT + 6;
+
 namespace dynet {
 
 template <class T>
@@ -158,19 +169,43 @@ protected:
 
 }; // class TextFileSaver
 
-class TextFileLoader : public Loader {
+class DataReader {
  public:
-  TextFileLoader(const std::string & filename);
-  ~TextFileLoader() override;
-  void populate(ParameterCollection & model, const std::string & key = "") override;
-  void populate(Parameter & param, const std::string & key = "") override;
-  void populate(LookupParameter & lookup_param,
-                const std::string & key = "") override;
-  Parameter load_param(ParameterCollection & model, const std::string & key) override;
-  LookupParameter load_lookup_param(ParameterCollection & model, const std::string & key) override;
+  DataReader() { };
+  virtual ~DataReader();
 
+  virtual bool operator!() = 0;
+  virtual const std::string & getName() = 0;
+  // Skip ahead from the current position this count of bytes.
+  virtual void skip(size_t count) = 0;
+  // This is for short lines of unknown length that usually start with #.
+  virtual bool getLine(std::string & line) = 0;
+  // This is used to read floats into the space provided.
+  virtual void getFloats(std::vector<float> & values) = 0;
+};
+
+class BaseFileLoader : public Loader {
+ public:
+  virtual ~BaseFileLoader();
+ protected:
+  virtual void basePopulate(DataReader & dataReader, ParameterCollection & model, const std::string & key);
+  virtual void basePopulate(DataReader & dataReader, Parameter & param, const std::string & key);
+  virtual void basePopulate(DataReader & dataReader, LookupParameter & lookup_param, const std::string & key);
+  virtual Parameter baseLoadParam(DataReader & dataReader, ParameterCollection & model, const std::string & key);
+  virtual LookupParameter baseLoadLookupParam(DataReader & dataReader, ParameterCollection & model, const std::string & key);
+};
+
+class TextFileLoader : public BaseFileLoader {
  private:
   std::string dataname;
+public:
+  TextFileLoader(const std::string & filename);
+  ~TextFileLoader();
+  void populate(ParameterCollection & model, const std::string & key = "") override;
+  void populate(Parameter & param, const std::string & key = "") override;
+  void populate(LookupParameter & lookup_param, const std::string & key = "") override;
+  Parameter load_param(ParameterCollection & model, const std::string & key) override;
+  LookupParameter load_lookup_param(ParameterCollection & model, const std::string & key) override;
 }; // class TextFileLoader
 
 } // namespace dynet
