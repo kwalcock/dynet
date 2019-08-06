@@ -27,7 +27,7 @@ else(WITH_CUDA_BACKEND)
   set(CMAKE_SWIG_FLAGS -package edu.cmu.dynet.internal)
 endif(WITH_CUDA_BACKEND)
 
-# This has been moved up for the sake of clualb contribs.
+# This has been moved up for the sake of clulab contribs.
 set(SWIG_JAVA_FILES
     "${CMAKE_SWIG_OUTDIR}/AdadeltaTrainer.java"
     "${CMAKE_SWIG_OUTDIR}/AdagradTrainer.java"
