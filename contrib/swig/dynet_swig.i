@@ -1246,7 +1246,7 @@ struct DynetParams {
 void initialize(DynetParams params);
 void initialize(int& argc, char**& argv, bool shared_parameters = false);
 void cleanup();
-
+void reset_rng(unsigned seed);
 
 //////////////////////////
 // serialization logic  //
