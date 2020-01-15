@@ -114,10 +114,10 @@ VECTORCONSTRUCTOR(std::vector<dynet::Parameter>, ParameterVector, ParameterVecto
 // "unknown error" message for all others.
 %catches(
   std::invalid_argument,
-  std::runtime_error,
   std::domain_error,
   dynet::out_of_memory,
   dynet::cuda_exception,
+  std::runtime_error,
   ...
 );
 
