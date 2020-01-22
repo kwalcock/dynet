@@ -844,32 +844,36 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
   Tensor scratch_t({(unsigned int)all_params.size()}, gradient_norm_scratch, &dev, DeviceMempool::NONE);
   Tensor sum_t({1}, gradient_norm_scratch + pi, &dev, DeviceMempool::NONE);
 
-  // The original version has problems if the sum is somehow negative.
-  //  t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum().sqrt();
+  // Standard code
+  t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum().sqrt();
+  float sqrt = gradient_norm_scratch[pi];
+  
+//  sqrt = INFINITY;
+  sqrt = NAN;
 
-  auto sum = t<1>(scratch_t).sum();
-  t<0>(sum_t).device(*dev.edevice) = sum;
-  float floatSum = gradient_norm_scratch[pi];
+  // Paranoid code
+  if (isnan(sqrt) || isinf(sqrt)) {
+    // The condition above should be very, very infrequent.
+    // Therefore capture/recalculate this intermediate value only when necessary.
+    t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum();
+    float sum = gradient_norm_scratch[pi];
+    sum = -5;
+    gradient_norm_scratch[0] = INFINITY;
+    gradient_norm_scratch[1] = NAN;
+    gradient_norm_scratch[2] = -3;
 
-  if (floatSum < 0)
-    if (!isnan(floatSum) && !isinf(floatSum)) {
-      // I can do something about it, by setting the sum to zero, for example.
-      TensorTools::zero(sum_t);
-//      TensorTools::constant(sum_t, floatSum);
-
+    cerr << "sqrt=" << sqrt << ", sum=" << sum;
+    for (int i = 0; i < (unsigned int)all_params.size(); ++i) {
+      float value = gradient_norm_scratch[i];
+      if (isnan(value) || isinf(value) || value < 0)
+        cerr << ", " << i << "=" << value;
     }
-    else {
-      // Print the values of gradient_norm_scratch for debugging, before the subsequent crash.
-      for (int i = 0; i < (unsigned int)all_params.size(); ++i)
-        cerr << gradient_norm_scratch[i] << " ";
-      cerr << endl;
-    }
-
-  auto sqrt = t<0>(sum_t).sqrt();
-  t<0>(sum_t).device(*dev.edevice) = sqrt;
-//  float floatSqrt = gradient_norm_scratch[pi];
-//  cerr << "sum = " << floatSum << " sqrt = " << floatSqrt << endl;
-  return gradient_norm_scratch[pi];
+    cerr << endl;
+    if (!isnan(sum) && !isinf(sum) && sum < 0)
+      return 0; // Try to do something about it.
+  }
+  // Standard code
+  return sqrt;
 }
 
 #ifdef __CUDACC__
