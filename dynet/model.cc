@@ -865,7 +865,7 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
     cerr << "sqrt=" << sqrt << ", sum=" << sum;
     for (int i = 0; i < (unsigned int)all_params.size(); ++i) {
       float value = gradient_norm_scratch[i];
-      if (isnan(value) || isinf(value) || value < 0)
+      if (std::isnan(value) || std::isinf(value) || value < 0)
         cerr << ", " << i << "=" << value;
     }
     cerr << endl;
