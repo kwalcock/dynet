@@ -843,7 +843,27 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
   }
   Tensor scratch_t({(unsigned int)all_params.size()}, gradient_norm_scratch, &dev, DeviceMempool::NONE);
   Tensor sum_t({1}, gradient_norm_scratch + pi, &dev, DeviceMempool::NONE);
-  t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum().sqrt();
+
+  // The previous version has problems if the sum is somehow negative.
+  //  t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum().sqrt();
+
+  auto sum = t<1>(scratch_t).sum();
+  t<0>(sum_t).device(*dev.edevice) = sum;
+  float floatSum = gradient_norm_scratch[pi];
+
+  if (floatSum > 0)
+    if (!isnan(floatSum) && !isinf(floatSum)) {
+      // I can do something about it, manipulate sum
+      TensorTools::zero(sum_t); // need to zero the sum instead
+    }
+    else {
+        // print the values of gradient_norm_scratch for debugging
+    }
+
+  auto sqrt = sum.sqrt();
+  t<0>(sum_t).device(*dev.edevice) = sqrt;
+  float floatSqrt = gradient_norm_scratch[pi];
+
   return gradient_norm_scratch[pi];
 }
 
