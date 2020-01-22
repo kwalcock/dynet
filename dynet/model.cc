@@ -847,9 +847,6 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
   // Standard code
   t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum().sqrt();
   float sqrt = gradient_norm_scratch[pi];
-  
-//  sqrt = INFINITY;
-  sqrt = NAN;
 
   // Paranoid code
   if (std::isnan(sqrt) || std::isinf(sqrt)) {
@@ -857,10 +854,6 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
     // Therefore capture/recalculate this intermediate value only when necessary.
     t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum();
     float sum = gradient_norm_scratch[pi];
-    sum = -5;
-    gradient_norm_scratch[0] = INFINITY;
-    gradient_norm_scratch[1] = NAN;
-    gradient_norm_scratch[2] = -3;
 
     cerr << "sqrt=" << sqrt << ", sum=" << sum;
     for (int i = 0; i < (unsigned int)all_params.size(); ++i) {
@@ -869,6 +862,7 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
         cerr << ", " << i << "=" << value;
     }
     cerr << endl;
+
     if (!std::isnan(sum) && !std::isinf(sum) && sum < 0)
       return 0; // Try to do something about it.
   }
