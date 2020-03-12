@@ -71,7 +71,14 @@ void SharedAllocator::zero(void* p, size_t n) {
 void* GPUAllocator::malloc(size_t n) {
   void* ptr = nullptr;
   CUDA_CHECK(cudaSetDevice(devid));
-  CUDA_CHECK(cudaMalloc(&ptr, n));
+  std::cerr << "GPUAllocator::malloc(size_t " << n << ")" << std::endl;
+  try {
+    CUDA_CHECK(cudaMalloc(&ptr, n));
+  }
+  catch (dynet::cuda_exception exception) {
+   std::cerr << "cudaMalloc(&ptr, " << n << ") exception caught." << std::endl;
+   throw exception;
+  }
   if (!ptr) {
     show_pool_mem_info();
     cerr << "GPU memory allocation failed n=" << n << endl;
