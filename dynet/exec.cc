@@ -1073,7 +1073,10 @@ void BatchedExecutionEngine::backward(VariableIndex from_where, bool full) {
             // Non-contiguous
             Tensor my_ndEdf = *xs[ai];
             if (my_batch.concat[ai] == 1) {
-              size_t used = node->device->pools[(int)DeviceMempool::DEDFS]->used();
+             std::cerr << "Keith says calculating used in BatchedExecutionEngine::backward" << std::endl;
+             size_t used = node->device->pools[(int)DeviceMempool::DEDFS]->used();
+              std::cerr << "Keith says in BatchedExecutionEngine::backward used was " << used << std::endl;
+              std::cerr << "Keith says my_ndEdf.d.size() = " << my_ndEdf.d.size() << " and sizeof(float) = " << sizeof(float) << std::endl;
               my_ndEdf.v = static_cast<float*>(batched_ndEdfs[i].device->pools[(int)DeviceMempool::DEDFS]->allocate(my_ndEdf.d.size() * sizeof(float)));
               my_ndEdf.mem_pool = DeviceMempool::DEDFS;
               TensorTools::zero(my_ndEdf);
@@ -1081,6 +1084,7 @@ void BatchedExecutionEngine::backward(VariableIndex from_where, bool full) {
               // cerr << "noncontig backward[" << i << "](" << ai << ")->" << node2batch[arg] << " == "; for(auto id : my_batch.ids) cerr << " ndEdfs[" << cg.nodes[id]->args[ai] << "] == " << print_vec(as_vector(ndEdfs[cg.nodes[id]->args[ai]])); cerr << " + " << print_vec(as_vector(my_ndEdf)) << " == ";
               accumulate_tensors(my_ndEdf, my_batch.ids, ai);
               // for(auto id : my_batch.ids) cerr << " ndEdfs[" << cg.nodes[id]->args[ai] << "] == " << print_vec(as_vector(ndEdfs[cg.nodes[id]->args[ai]])); cerr << endl;
+              std::cerr << "Keith says used will be " << used << std::endl;
               node->device->pools[(int)DeviceMempool::DEDFS]->set_used(used);
             // Contiguous
             } else {

@@ -12,6 +12,7 @@ void* InternalMemoryPool::allocate(size_t n) {
   }
   void* res = static_cast<char*>(mem) + used;
   used += rounded_n;
+  std::cerr << "Keith says in InternalMemoryPool::allocate used = " << used << std::endl;
   return res;
 }
 
@@ -21,6 +22,7 @@ void InternalMemoryPool::sys_alloc(size_t cap) {
   if (mem == NULL)
     DYNET_RUNTIME_ERR(name << " failed to allocate " << capacity);
   used = 0;
+  std::cerr << "Keith says in InternalMemoryPool::sys_alloc used = " << used << std::endl;
 }
 
 AlignedMemoryPool::AlignedMemoryPool(const std::string &name, size_t initial_cap, MemAllocator *a, size_t expanding_unit) : name(name), cap(initial_cap), current(0), a(a), expanding_unit(expanding_unit) {
@@ -64,12 +66,19 @@ size_t AlignedMemoryPool::used() {
     return pools[0]->used;
   }
   size_t res = 0;
-  for (auto p : pools) { res += p->used; }
+  for (auto p : pools) {
+    std::cerr << "Keith says in AlignedMemoryPool::used p->used = " << p->used << std::endl;
+    res += p->used;
+  }
   return res;
 }
 
 void AlignedMemoryPool::set_used(size_t s) {
-  if(s != pools.back()->used) {
+ std::cerr << "Keith says anew, " << std::endl;
+ std::cerr << "pools.size() = " << pools.size() << std::endl;
+ std::cerr << "pools.back()->used = " << pools.back()->used << " and s = " << s << std::endl;
+ 
+ if(s != pools.back()->used) {
     DYNET_ARG_CHECK(pools.size() == 1, "Dynet does not support both dynamic increasing of memory pool size, and automatic batching or memory checkpointing. If you want to use automatic batching or checkpointing, please pre-allocate enough memory using the --dynet-mem command line option (details http://dynet.readthedocs.io/en/latest/commandline.html).");
     pools[0]->used = s;
   }
