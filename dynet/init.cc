@@ -227,6 +227,7 @@ void initialize(DynetParams& params) {
   vector<Device*> gpudevices;
 #if HAVE_CUDA
   if (!(params.cpu_requested && (params.requested_gpus == -1))) {
+   std::cerr << "Keith was here!" << std::endl;
     cerr << "[dynet] initializing CUDA\n";
     gpudevices = initialize_gpu(params);
     for (auto gpu : gpudevices)
