@@ -80,6 +80,7 @@ void* GPUAllocator::malloc(size_t n) {
    throw exception;
   }
   if (!ptr) {
+    std::cerr << "cudaMalloc(&ptr, " << n << ") null pointer caught." << std::endl;
     show_pool_mem_info();
     cerr << "GPU memory allocation failed n=" << n << endl;
     throw dynet::out_of_memory("GPU memory allocation failed");
