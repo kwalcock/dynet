@@ -16,7 +16,9 @@ using namespace dynet;
 using namespace std;
 
 int main(int _argc, char** _argv) {
-  cout << "Program started!" << endl;
+  const int threadCount = 8;
+
+  cout << "Program started for " << threadCount << " threads!" << endl;
 
   char* args[] = {
     "",
@@ -29,7 +31,6 @@ int main(int _argc, char** _argv) {
 
   dynet::initialize(argc, argv);
 
-  const int threadCount = 2;
   const int layers = 2;
   const unsigned int inputDim = 3;
   const unsigned int hiddenDim = 10;
@@ -37,18 +38,18 @@ int main(int _argc, char** _argv) {
   vector<vector<float>> results(threadCount);
   dynet::ParameterCollection model;
   dynet::VanillaLSTMBuilder protoLstmBuilder(layers, inputDim, hiddenDim, model);
-  dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, {inputDim});
+  dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
   dynet::autobatch_flag = 0;
-  
+
   vector<thread> threads(threadCount);
   for (size_t t = 0; t < threadCount; ++t) {
     threads[t] = thread([&, t]() {
-      cout << "Thread started!" << endl;
+      cout << "Thread " << t << " started!" << endl;
       dynet::ComputationGraph cg;
       dynet::VanillaLSTMBuilder lstmBuilder(protoLstmBuilder);
       dynet::LookupParameter lookupParameter(protoLookupParameter);
       lstmBuilder.new_graph(cg);
-        
+
       vector<Expression> losses;
       for (size_t j = 0; j < inputDim; ++j) {
         lstmBuilder.start_new_sequence();
@@ -61,7 +62,7 @@ int main(int _argc, char** _argv) {
       losses.push_back(losses[0] + losses[inputDim - 1]);
       Expression z = dynet::sum(losses);
       results[t].push_back(as_scalar(z.value()));
-      cout << "Thread finished!" << endl;
+      cout << "Thread " << t << " finished!" << endl;
     });
   }
 
