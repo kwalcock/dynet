@@ -19,12 +19,13 @@ int main(int _argc, char** _argv) {
   cout << "Program started!" << endl;
 
   char* args[] = {
+    "",
     "--dynet-seed", "10",
     "--dynet-mem", "1",
     "--dynet-dynamic-mem", "1"
   };
   char** argv = &args[0];
-  int argc = 6;
+  int argc = 7;
 
   dynet::initialize(argc, argv);
 
