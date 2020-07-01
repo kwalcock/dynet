@@ -109,15 +109,18 @@ BOOST_AUTO_TEST_CASE( param_after_node_2 ) {
 }
 
 BOOST_AUTO_TEST_CASE( multi_lstm ) {
-  vector<vector<float>> results(4);
+  const int threadCount = 8;
+
+  vector<vector<float>> results(threadCount);
   dynet::ParameterCollection mod;
   dynet::VanillaLSTMBuilder lstm_proto(2, 3, 10, mod);
   dynet::LookupParameter lp_proto = mod.add_lookup_parameters(10, {3});
   dynet::autobatch_flag = 0;
   
-  vector<thread> threads(4);
-  for (size_t t = 0; t < 4; ++t) {
+  vector<thread> threads(threadCount);
+  for (size_t t = 0; t < threadCount; ++t) {
     threads[t] = thread([&, t]() {
+      cout << "Starting thread " << t << endl;
       dynet::ComputationGraph cg;
       dynet::VanillaLSTMBuilder lstm(lstm_proto);
       dynet::LookupParameter lp(lp_proto);
@@ -135,11 +138,12 @@ BOOST_AUTO_TEST_CASE( multi_lstm ) {
       losses.push_back(losses[0] + losses[2]);
       Expression z = dynet::sum(losses);
       results[t].push_back(as_scalar(z.value()));
+      cout << "Finishing thread " << t << endl;
     });
   }
 
-  for (size_t t = 0; t < 4; ++t) { threads[t].join(); }
-  for (size_t t = 0; t < 4; ++t) {
+  for (size_t t = 0; t < threadCount; ++t) { threads[t].join(); }
+  for (size_t t = 0; t < threadCount; ++t) {
     for(size_t i = 1; i < results[t].size(); ++i) {
       BOOST_CHECK_CLOSE(results[t][0], results[t][i], 0.0001);
     }
