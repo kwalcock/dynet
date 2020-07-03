@@ -48,7 +48,7 @@ public:
 };
 
 int main(int _argc, char** _argv) {
-  const int threadCount = 1;
+  const int threadCount = 2;
 
   std::cout << "Program started for " << threadCount << " threads!" << std::endl;
 
@@ -75,9 +75,10 @@ int main(int _argc, char** _argv) {
 
   // This should work OK if they are nested, but not if they are not.
   OverlappingLstm overlappingLstm0(0, protoLstmBuilder, protoLookupParameter);
-//  OverlappingLstm overlappingLstm1(1, protoLstmBuilder, protoLookupParameter);
   results[0] = overlappingLstm0.test(protoLstmBuilder, protoLookupParameter, layers, inputDim);
-//  results[1] = overlappingLstm1.test(layers, inputDim);
+
+  OverlappingLstm overlappingLstm1(1, protoLstmBuilder, protoLookupParameter);
+  results[1] = overlappingLstm1.test(protoLstmBuilder, protoLookupParameter, layers, inputDim);
 
   for (size_t t = 0; t < threadCount; ++t)
     for (size_t i = 1; i < results[t].size(); ++i)
