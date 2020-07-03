@@ -16,19 +16,19 @@ It does not work with dynamic memory if thread count is 2.
 class OverlappingLstm {
 
 public:
-  dynet::ComputationGraph cg;
-  dynet::VanillaLSTMBuilder lstmBuilder;
-  dynet::LookupParameter lookupParameter;
   int t;
 
   OverlappingLstm(int t, dynet::VanillaLSTMBuilder &protoLstmBuilder, dynet::LookupParameter &protoLookupParameter):
-      t(t), lstmBuilder(protoLstmBuilder), lookupParameter(protoLookupParameter) {
+      t(t)  {
     std::cout << "Thread " << t << " started!" << std::endl;
-    lstmBuilder.new_graph(cg);
-
   }
 
-  std::vector<float> test(int layers, int inputDim) {
+  std::vector<float> test(dynet::VanillaLSTMBuilder &protoLstmBuilder, dynet::LookupParameter &protoLookupParameter, int layers, int inputDim) {
+    dynet::ComputationGraph cg;
+    dynet::VanillaLSTMBuilder lstmBuilder(protoLstmBuilder);
+    dynet::LookupParameter lookupParameter(protoLookupParameter);
+    lstmBuilder.new_graph(cg);
+
     std::vector<dynet::Expression> losses;
     for (size_t j = 0; j < inputDim; ++j) {
       lstmBuilder.start_new_sequence();
@@ -46,7 +46,6 @@ public:
     return results;
   }
 };
-
 
 int main(int _argc, char** _argv) {
   const int threadCount = 1;
@@ -75,10 +74,10 @@ int main(int _argc, char** _argv) {
   dynet::autobatch_flag = 0;
 
   // This should work OK if they are nested, but not if they are not.
-  OverlappingLstm overlappingLstm1(1, protoLstmBuilder, protoLookupParameter);
-//  OverlappingLstm overlappingLstm2(2, protoLstmBuilder, protoLookupParameter);
-  results[0] = overlappingLstm1.test(layers, hiddenDim);
-//  results[1] = overlappingLstm2.test(layers, hiddenDim);
+  OverlappingLstm overlappingLstm0(0, protoLstmBuilder, protoLookupParameter);
+//  OverlappingLstm overlappingLstm1(1, protoLstmBuilder, protoLookupParameter);
+  results[0] = overlappingLstm0.test(protoLstmBuilder, protoLookupParameter, layers, inputDim);
+//  results[1] = overlappingLstm1.test(layers, inputDim);
 
   for (size_t t = 0; t < threadCount; ++t)
     for (size_t i = 1; i < results[t].size(); ++i)
