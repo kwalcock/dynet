@@ -17,18 +17,17 @@ class OverlappingLstm {
 
 public:
   int t;
+  dynet::ComputationGraph cg;
+  dynet::VanillaLSTMBuilder lstmBuilder;
+  dynet::LookupParameter lookupParameter;
 
-  OverlappingLstm(int t, dynet::VanillaLSTMBuilder &protoLstmBuilder, dynet::LookupParameter &protoLookupParameter):
-      t(t)  {
+  OverlappingLstm(int t, dynet::VanillaLSTMBuilder &protoLstmBuilder, dynet::LookupParameter &protoLookupParameter) :
+    t(t), lstmBuilder(protoLstmBuilder), lookupParameter(protoLookupParameter) {
     std::cout << "Thread " << t << " started!" << std::endl;
+    lstmBuilder.new_graph(cg);
   }
 
-  std::vector<float> test(dynet::VanillaLSTMBuilder &protoLstmBuilder, dynet::LookupParameter &protoLookupParameter, int layers, int inputDim) {
-    dynet::ComputationGraph cg;
-    dynet::VanillaLSTMBuilder lstmBuilder(protoLstmBuilder);
-    dynet::LookupParameter lookupParameter(protoLookupParameter);
-    lstmBuilder.new_graph(cg);
-
+  std::vector<float> test(int layers, int inputDim) {
     std::vector<dynet::Expression> losses;
     for (size_t j = 0; j < inputDim; ++j) {
       lstmBuilder.start_new_sequence();
@@ -75,10 +74,11 @@ int main(int _argc, char** _argv) {
 
   // This should work OK if they are nested, but not if they are not.
   OverlappingLstm overlappingLstm0(0, protoLstmBuilder, protoLookupParameter);
-  results[0] = overlappingLstm0.test(protoLstmBuilder, protoLookupParameter, layers, inputDim);
-
   OverlappingLstm overlappingLstm1(1, protoLstmBuilder, protoLookupParameter);
-  results[1] = overlappingLstm1.test(protoLstmBuilder, protoLookupParameter, layers, inputDim);
+
+  results[0] = overlappingLstm0.test(layers, inputDim);
+
+  results[1] = overlappingLstm1.test(layers, inputDim);
 
   for (size_t t = 0; t < threadCount; ++t)
     for (size_t i = 1; i < results[t].size(); ++i)
