@@ -20,6 +20,7 @@ set(dynet_library_SRCS
     io.cc
     lstm.cc
     mem.cc
+    mem_debug.cc
     model.cc
     nodes-activations.cc
     nodes-affinetransform.cc
@@ -103,6 +104,7 @@ io.h
 lstm.h
 matrix-multiply.h
 mem.h
+mem_debug.h
 model.h
 mp.h
 nodes-activations.h
