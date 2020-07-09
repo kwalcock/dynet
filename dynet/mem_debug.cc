@@ -21,7 +21,8 @@ MemDebug memDebug;
 
 #else
 
-void debugMem(__LINE__) {
+void debugMem(char* file, int line) {
+  // no-op
 }
 
 #endif
