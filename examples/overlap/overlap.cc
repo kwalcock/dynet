@@ -20,15 +20,13 @@ public:
   dynet::ComputationGraph cg;
   dynet::VanillaLSTMBuilder lstmBuilder;
   dynet::LookupParameter lookupParameter;
+  std::vector<dynet::Expression> losses;
 
-  OverlappingLstm(int t, dynet::VanillaLSTMBuilder &protoLstmBuilder, dynet::LookupParameter &protoLookupParameter) :
+  OverlappingLstm(int t, dynet::VanillaLSTMBuilder &protoLstmBuilder, dynet::LookupParameter &protoLookupParameter, int layers, int inputDim):
     t(t), lstmBuilder(protoLstmBuilder), lookupParameter(protoLookupParameter) {
     std::cout << "Thread " << t << " started!" << std::endl;
     lstmBuilder.new_graph(cg);
-  }
 
-  std::vector<float> test(int layers, int inputDim) {
-    std::vector<dynet::Expression> losses;
     for (size_t j = 0; j < inputDim; ++j) {
       lstmBuilder.start_new_sequence();
       for (size_t k = 0; k < inputDim; ++k) {
@@ -37,6 +35,9 @@ public:
       }
       losses.push_back(dynet::squared_norm(lstmBuilder.final_h()[layers - 1]));
     }
+  }
+
+  std::vector<float> test(int layers, int inputDim) {
     losses.push_back(losses[0] + losses[inputDim - 1]);
     dynet::Expression z = dynet::sum(losses);
     std::vector<float> results;
@@ -73,8 +74,8 @@ int main(int _argc, char** _argv) {
   dynet::autobatch_flag = 0;
 
   // This should work OK if they are nested, but not if they are not.
-  OverlappingLstm overlappingLstm0(0, protoLstmBuilder, protoLookupParameter);
-  OverlappingLstm overlappingLstm1(1, protoLstmBuilder, protoLookupParameter);
+  OverlappingLstm overlappingLstm0(0, protoLstmBuilder, protoLookupParameter, layers, inputDim);
+  OverlappingLstm overlappingLstm1(1, protoLstmBuilder, protoLookupParameter, layers, inputDim);
 
   results[0] = overlappingLstm0.test(layers, inputDim);
 

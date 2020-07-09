@@ -1,6 +1,8 @@
 #ifndef DYNET_ALIGNED_MEM_POOL_H
 #define DYNET_ALIGNED_MEM_POOL_H
 
+#include "dynet/debug.h"
+
 #include <iostream>
 #include "dynet/mem.h"
 #include "dynet/globals.h"
@@ -10,11 +12,11 @@ namespace dynet {
 
 class BaseMemoryPool {
  public:
-  BaseMemoryPool(const std::string & name, MemAllocator* a) : a(a), name(name) {}
+  BaseMemoryPool(const std::string & name, MemAllocator* a) : a(a), name(name), mem(nullptr) {}
   virtual ~BaseMemoryPool() {}
   virtual void* allocate(size_t n) = 0; 
 
-  virtual void free() = 0;
+  virtual void myfree() = 0;
   // zeros out the amount of allocations
   virtual void zero_allocated_memory() = 0;
 
@@ -39,16 +41,16 @@ class DynamicCPUMemoryPool : public BaseMemoryPool {
     : BaseMemoryPool(name, new CPUAllocator()) {}
 
   ~DynamicCPUMemoryPool() {
-      free();
+      myfree();
       delete a;
   }
 
   void* allocate(size_t n); 
   void zero(void* p, size_t n); 
 
-  void free() {
+  void myfree() {
     for (auto p : ptrs)
-      a->free(p);
+      a->myfree(p);
     ptrs.clear();
     sizes.clear();
   }
@@ -71,12 +73,12 @@ class InternalMemoryPool : public BaseMemoryPool {
   }
 
   ~InternalMemoryPool() {
-      a->free(mem);
+      a->myfree(mem);
   }
 
   void* allocate(size_t n); 
 
-  void free() {
+  void myfree() {
     //std::cerr << "freeing " << used << " bytes\n";
     used = 0;
   }
@@ -104,7 +106,7 @@ class AlignedMemoryPool {
 
     void* allocate(size_t n);
 
-    void free();
+    void myfree();
 
     void zero_allocated_memory();
 

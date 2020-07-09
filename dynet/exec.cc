@@ -109,7 +109,7 @@ const Tensor& SimpleExecutionEngine::incremental_forward(VariableIndex i) {
   // free any old memory if this is a new CG
   if (num_nodes_evaluated == 0)
     for (Device* dev : device_manager->get_devices())
-      dev->pools[(int)DeviceMempool::FXS]->free();
+      dev->pools[(int)DeviceMempool::FXS]->myfree();
 
   if (i >= num_nodes_evaluated) {
     nfxs.resize(i + 1);
@@ -201,7 +201,7 @@ void SimpleExecutionEngine::backward(VariableIndex from_where, bool full) {
 
   const unsigned num_nodes = from_where + 1;
   ndEdfs.resize(num_nodes);
-  pool_dEdfs->free();
+  pool_dEdfs->myfree();
 
   // This loop allocates memory on the appropriate devices for the nodes whose
   // derivatives will be computed.
@@ -508,7 +508,7 @@ void BatchedExecutionEngine::garbage_collect() {
     }
   }
   for (Device* dev : device_manager->get_devices())
-    dev->pools[(int)DeviceMempool::FXS]->free();
+    dev->pools[(int)DeviceMempool::FXS]->myfree();
   batches.clear();
 }
 
@@ -988,7 +988,7 @@ void BatchedExecutionEngine::backward(VariableIndex from_where, bool full) {
   vector<Tensor> batched_ndEdfs(num_batches);
   ndEdfs.resize(node2batch.size());
   for(Device* device : device_manager->get_devices())
-    device->pools[(int)DeviceMempool::DEDFS]->free();
+    device->pools[(int)DeviceMempool::DEDFS]->myfree();
   for (unsigned i = 0; i < num_batches; ++i) {
     const auto & my_batch = batches[i];
     const auto & dim = my_batch.nfx.d;

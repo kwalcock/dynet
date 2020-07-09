@@ -300,12 +300,26 @@ void initialize(int& argc, char**& argv, bool shared_parameters) {
 }
 
 void cleanup() {
-  delete rndeng;
-  get_device_manager()->clear();
-  default_device = nullptr;
+  if (default_device != nullptr) {
+    auto device_manager = get_device_manager();
+
+    device_manager->clear();
+    default_device = nullptr;
+
+    delete device_manager;
+    device_manager = nullptr;
+  }
+  if (rndeng != nullptr) {
+    delete rndeng;
+    rndeng = nullptr;
+  }
 }
 
 void reset_rng(unsigned seed) {
+  if (rndeng != nullptr) {
+    delete rndeng;
+    rndeng = nullptr;
+  }
   rndeng = new mt19937(seed);
 #if HAVE_CUDA
   DeviceManager* device_manager = get_device_manager();

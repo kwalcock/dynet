@@ -569,7 +569,7 @@ IndexTensor TensorTools::categorical_sample_log_prob_dev(const MyDevice & dev, c
   copy.v = static_cast<float*>(scratch_allocator->allocate(v.d.size() * sizeof(float)));
   TensorTools::randomize_uniform(copy);
   tb<3>(ids).device(*dev.edevice) = (tb<4>(v) - (-tb<4>(copy).log()).log()).argmax(dim);
-  scratch_allocator->free();
+  scratch_allocator->myfree();
   return ids;
 }
 #ifdef __CUDACC__

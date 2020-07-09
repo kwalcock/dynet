@@ -69,7 +69,7 @@ void LogSumExp::forward_dev_impl(const MyDevice & dev, const vector<const Tensor
     // log and add max
     tvec(fx).device(*dev.edevice) = tvec(fx).log() + tvec(ms);
 
-    scratch_allocator->free();
+    scratch_allocator->myfree();
   }
 }
 
@@ -128,7 +128,7 @@ void LogSumExpDimension::forward_dev_impl(const MyDevice & dev, const vector<con
   AlignedMemoryPool* scratch_allocator = fx.device->pools[(int)DeviceMempool::SCS];
   ms.v = static_cast<float*>(scratch_allocator->allocate(ms.d.size() * sizeof(float)));
   TensorTools::logsumexp_dev(dev, *xs[0], ms, fx, dimension);
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 
 template<class MyDevice>

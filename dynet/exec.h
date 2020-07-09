@@ -1,6 +1,8 @@
 #ifndef DYNET_EXEC_H
 #define DYNET_EXEC_H
 
+#include "dynet/debug.h"
+
 #include "dynet/dynet.h"
 #include "dynet/aligned-mem-pool.h"
 #include <memory>

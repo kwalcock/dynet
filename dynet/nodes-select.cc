@@ -432,7 +432,7 @@ void StridedSelect::forward_dev_impl(const MyDevice & dev, const vector<const Te
   tb<4>(tmp_tensor).device(*dev.edevice) = tb<4>(*xs[0]).slice(offsets, extents);
   tb<4>(fx).device(*dev.edevice) = tb<4>(tmp_tensor).stride(strides_arr);
 
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 
 template<class MyDevice>
@@ -466,7 +466,7 @@ void StridedSelect::backward_dev_impl(const MyDevice & dev,
 
   tb<4>(dEdxi).slice(offsets, extents).device(*dev.edevice) += tb<4>(tmp_tensor);
 
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 DYNET_NODE_INST_DEV_IMPL(StridedSelect)
 

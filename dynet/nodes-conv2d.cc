@@ -151,7 +151,7 @@ void Conv2D::forward_dev_impl(const MyDevice & dev, const vector<const Tensor*>&
     }
   }
 #endif
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 
 template<class MyDevice>
@@ -218,7 +218,7 @@ void Conv2D::backward_dev_impl(const MyDevice & dev,
     t<1>(dEdxi).device(*dev.edevice) += tb<3>(dEdf).sum(red_axis);
   }
 #endif
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 DYNET_NODE_INST_DEV_IMPL(Conv2D)
 

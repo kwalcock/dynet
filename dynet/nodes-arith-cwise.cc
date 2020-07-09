@@ -417,7 +417,7 @@ void CwiseQuotient::backward_helper(const MyDevice & dev,
     xs1_squared.v = static_cast<float*>(scratch_allocator->allocate(xs1_squared.d.size() * sizeof(float)));
     tb<4>(xs1_squared).device(*dev.edevice) = tb<4>(*xs[1]).square();
     tb<4>(dEdxi).device(*dev.edevice) -= (tb<4>(dEdf) / tb<4>(xs1_squared).broadcast(bcast) * tb<4>(*xs[0])).sum(red_axis).reshape(morph);
-    scratch_allocator->free();
+    scratch_allocator->myfree();
 }
 
 // ************* Pow *************

@@ -486,7 +486,7 @@ void StdDimension::forward_dev_impl(const MyDevice & dev, const vector<const Ten
     tb<3>(mean).device(*dev.edevice) = (tb<3>(*xs[0]).sum(red_axis).reshape(morph) / n);
     t<1>(fx).device(*dev.edevice) = ((tb<3>(*xs[0]) - tb<3>(mean).broadcast(bcast)).square().sum(red_axis) / n).sqrt();
   }
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 
 }
 
@@ -550,7 +550,7 @@ void StdDimension::backward_dev_impl(const MyDevice & dev,
     tb<3>(mean).device(*dev.edevice) = (tb<3>(*xs[0]).sum(red_axis).reshape(morph) / n);
     tb<3>(dEdxi).device(*dev.edevice) +=  (2 / n) * (tb<3>(*xs[0]) - tb<3>(mean).broadcast(bcast)) * (t<1>(fx).binaryExpr(t<1>(dEdf), FSqrtBackward())).reshape(morph).broadcast(bcast);
   }
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 
 }
 DYNET_NODE_INST_DEV_IMPL(StdDimension)
