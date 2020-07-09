@@ -1,7 +1,7 @@
 #ifndef DYNET_MEM_H
 #define DYNET_MEM_H
 
-#include "dynet/debug.h"
+#include "dynet/mem_debug.h"
 
 #include <vector>
 

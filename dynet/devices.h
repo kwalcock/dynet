@@ -1,7 +1,7 @@
 #ifndef DYNET_DEVICES_H
 #define DYNET_DEVICES_H
 
-#include "dynet/debug.h"
+#include "dynet/mem_debug.h"
 
 #include <unordered_map>
 #include <string>

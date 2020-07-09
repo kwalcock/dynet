@@ -1,4 +1,4 @@
-#include "dynet/debug.h"
+#include "dynet/mem_debug.h"
 
 #include <dynet/dynet.h>
 #include <dynet/lstm.h>
@@ -16,7 +16,7 @@ It does not work with dynamic memory if thread count is 2.
 */
 
 int main(int _argc, char** _argv) {
-  std::cout << "Memory leaks at line " << __LINE__ << std::endl; _CrtDumpMemoryLeaks();
+  debugMem(__FILE__, __LINE__);
 
   const int threadCount = 8;
 
@@ -31,14 +31,14 @@ int main(int _argc, char** _argv) {
   char** argv = &args[0];
   int argc = 7;
 
-  std::cout << "Memory leaks at line " << __LINE__ << std::endl; _CrtDumpMemoryLeaks();
+  debugMem(__FILE__, __LINE__);
   int* test = new int[10];
-  std::cout << "Memory leaks at line " << __LINE__ << std::endl; _CrtDumpMemoryLeaks();
+  debugMem(__FILE__, __LINE__);
   delete test;
-  std::cout << "Memory leaks at line " << __LINE__ << std::endl; _CrtDumpMemoryLeaks();
+  debugMem(__FILE__, __LINE__);
 
   dynet::initialize(argc, argv);
-  std::cout << "Memory leaks at line " << __LINE__ << std::endl; _CrtDumpMemoryLeaks();
+  debugMem(__FILE__, __LINE__);
 
   const int layers = 2;
   const unsigned int inputDim = 3;
@@ -52,7 +52,7 @@ int main(int _argc, char** _argv) {
 //      dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
 //      dynet::autobatch_flag = 0;
 
-      std::cout << "Memory leaks at line " << __LINE__ << std::endl; _CrtDumpMemoryLeaks();
+      debugMem(__FILE__, __LINE__);
 
       /*
       std::vector<std::thread> threads(threadCount);
@@ -60,40 +60,40 @@ int main(int _argc, char** _argv) {
         threads[t] = std::thread([&, t]() {
           std::cout << "Thread " << t << " started!" << std::endl;
           dynet::ComputationGraph cg;
-          std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+          debugMem(__FILE__, __LINE__);
           dynet::VanillaLSTMBuilder lstmBuilder(protoLstmBuilder);
-          std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+          debugMem(__FILE__, __LINE__);
           dynet::LookupParameter lookupParameter(protoLookupParameter);
-          std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+          debugMem(__FILE__, __LINE__);
           lstmBuilder.new_graph(cg);
-          std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+          debugMem(__FILE__, __LINE__);
 
           std::vector<dynet::Expression> losses;
-          std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+          debugMem(__FILE__, __LINE__);
           for (size_t j = 0; j < inputDim; ++j) {
-            std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+            debugMem(__FILE__, __LINE__);
             lstmBuilder.start_new_sequence();
-            std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+            debugMem(__FILE__, __LINE__);
             for (size_t k = 0; k < inputDim; ++k) {
-              std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+              debugMem(__FILE__, __LINE__);
               dynet::Expression x = dynet::lookup(cg, lookupParameter, j * inputDim + k);
-              std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+              debugMem(__FILE__, __LINE__);
               lstmBuilder.add_input(x);
-              std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+              debugMem(__FILE__, __LINE__);
             }
-            std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+            debugMem(__FILE__, __LINE__);
             losses.push_back(dynet::squared_norm(lstmBuilder.final_h()[layers - 1]));
-            std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+            debugMem(__FILE__, __LINE__);
           }
-          std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+          debugMem(__FILE__, __LINE__);
           losses.push_back(losses[0] + losses[inputDim - 1]);
-          std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+          debugMem(__FILE__, __LINE__);
           dynet::Expression z = dynet::sum(losses);
-          std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+          debugMem(__FILE__, __LINE__);
 //          auto z_value = z.value();
-          std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+          debugMem(__FILE__, __LINE__);
 //          auto z_value_scalar = dynet::as_scalar(z_value);
-          std::cout << "Thread " << t << " line " << __LINE__ << std::endl;
+          debugMem(__FILE__, __LINE__);
 //          results[t].push_back(z_value_scalar);
           std::cout << "Thread " << t << " finished!" << std::endl;
         });
@@ -107,9 +107,8 @@ int main(int _argc, char** _argv) {
     }
   }
 
-  std::cout << "Program finished!" << std::endl;
-
-  std::cout << "Memory leaks at line " << __LINE__ << std::endl; _CrtDumpMemoryLeaks();
+  debugMem(__FILE__, __LINE__);
   dynet::cleanup();
-  std::cout << "Memory leaks at line " << __LINE__ << std::endl; _CrtDumpMemoryLeaks();
+  debugMem(__FILE__, __LINE__);
+  std::cout << "Program finished!" << std::endl;
 }

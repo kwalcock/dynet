@@ -1,7 +1,7 @@
 #ifndef DYNET_ALIGNED_MEM_POOL_H
 #define DYNET_ALIGNED_MEM_POOL_H
 
-#include "dynet/debug.h"
+#include "dynet/mem_debug.h"
 
 #include <iostream>
 #include "dynet/mem.h"
