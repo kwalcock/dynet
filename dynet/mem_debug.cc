@@ -1,17 +1,27 @@
-#include "dynet/debug.h"
+#include "dynet/mem_debug.h"
 #include <iostream>
 
 #ifdef _DEBUG
 
-MemoryTest::MemoryTest() {
+void debugMem(char* file, int line) {
+  std::cerr << "Memory leaks in " << file << " at line " << line << std::endl;
+  _CrtDumpMemoryLeaks();
+}
+
+MemDebug::MemDebug() {
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-  std::cout << "Memory leaks at line " << __LINE__ << std::endl; _CrtDumpMemoryLeaks();
+  debugMem(__FILE__, __LINE__);
 }
 
-MemoryTest::~MemoryTest() {
-  std::cout << "Memory leaks at line " << __LINE__ << std::endl; _CrtDumpMemoryLeaks();
+MemDebug::~MemDebug() {
+  debugMem(__FILE__, __LINE__);
 }
 
-MemoryTest memoryTest;
+MemDebug memDebug;
+
+#else
+
+void debugMem(__LINE__) {
+}
 
 #endif

@@ -1,16 +1,18 @@
-#ifndef DYNET_DEBUG_H
-#define DYNET_DEBUG_H
+#ifndef DYNET_MEM_DEBUG_H
+#define DYNET_MEM_DEBUG_H
 
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
 
+void debugMem(char* file, int line);
+
 #ifdef _DEBUG
 
-class MemoryTest {
+class MemDebug {
 public:
-  MemoryTest();
-  ~MemoryTest();
+  MemDebug();
+  ~MemDebug();
 };
 
 #endif
