@@ -493,7 +493,7 @@ void CircularCorrelation::backward_dev_impl(const MyDevice & dev,
         d_fft.template fft<Eigen::RealPart, Eigen::FFT_REVERSE>(fft);
   }
   out.device(*dev.edevice) += dtmp;
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 #endif
 }
 DYNET_NODE_INST_DEV_IMPL(CircularCorrelation)
@@ -604,7 +604,7 @@ void CircularConvolution::backward_dev_impl(const MyDevice & dev,
         d_fft.template fft<Eigen::RealPart, Eigen::FFT_REVERSE>(fft);
   }
   out.device(*dev.edevice) += dtmp;
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 #endif
 }
 DYNET_NODE_INST_DEV_IMPL(CircularConvolution)

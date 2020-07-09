@@ -26,7 +26,7 @@ namespace dynet {
 
 MemAllocator::~MemAllocator() {}
 
-void* CPUAllocator::malloc(size_t n) {
+void* CPUAllocator::mymalloc(size_t n) {
   void* ptr = _mm_malloc(n, align);
   if (!ptr) {
     show_pool_mem_info();
@@ -36,7 +36,7 @@ void* CPUAllocator::malloc(size_t n) {
   return ptr;
 }
 
-void CPUAllocator::free(void* mem) {
+void CPUAllocator::myfree(void* mem) {
   _mm_free(mem);
 }
 
@@ -44,7 +44,7 @@ void CPUAllocator::zero(void* p, size_t n) {
   memset(p, 0, n);
 }
 
-void* SharedAllocator::malloc(size_t n) {
+void* SharedAllocator::mymalloc(size_t n) {
 #if _WINDOWS
   cerr << "Shared memory not supported in Windows" << endl;
   throw dynet::out_of_memory("Shared memory allocation failed");
@@ -59,7 +59,7 @@ void* SharedAllocator::malloc(size_t n) {
 #endif
 }
 
-void SharedAllocator::free(void* mem) {
+void SharedAllocator::myfree(void* mem) {
 //  munmap(mem, n);
 }
 
@@ -68,7 +68,7 @@ void SharedAllocator::zero(void* p, size_t n) {
 }
 
 #if HAVE_CUDA
-void* GPUAllocator::malloc(size_t n) {
+void* GPUAllocator::mymalloc(size_t n) {
   void* ptr = nullptr;
   CUDA_CHECK(cudaSetDevice(devid));
   CUDA_CHECK(cudaMalloc(&ptr, n));
@@ -80,7 +80,7 @@ void* GPUAllocator::malloc(size_t n) {
   return ptr;
 }
 
-void GPUAllocator::free(void* mem) {
+void GPUAllocator::myfree(void* mem) {
   CUDA_CHECK(cudaFree(mem));
 }
 

@@ -85,7 +85,7 @@ void Softmax::forward_dev_impl(const MyDevice & dev, const vector<const Tensor*>
     tb<2>(fx).device(*dev.edevice) = tb<2>(fx) / tvec(z).reshape(morph).broadcast(bcasts);
 
   }
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 
 template<class MyDevice>
@@ -126,7 +126,7 @@ void Softmax::backward_dev_impl(const MyDevice & dev,
     Eigen::array<ptrdiff_t, 3> morph = {z.d[0], 1, z.d.bd};
     tb<2>(dEdxi).device(*dev.edevice) += (tb<2>(dEdf) - tvec(z).reshape(morph).broadcast(bcast)) * tb<2>(fx);
   }
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 DYNET_NODE_INST_DEV_IMPL(Softmax)
 

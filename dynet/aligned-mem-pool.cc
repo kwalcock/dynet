@@ -13,7 +13,7 @@ void DynamicCPUMemoryPool::zero(void* p, size_t n) {
 
 void* DynamicCPUMemoryPool::allocate(size_t n) {
   auto rounded_n = a->round_up_align(n);
-  void* res = a->malloc(rounded_n);
+  void* res = a->mymalloc(rounded_n);
   if (res) {
     ptrs.push_back(res);
     sizes.push_back(rounded_n);
@@ -36,7 +36,7 @@ void* InternalMemoryPool::allocate(size_t n) {
 
 void InternalMemoryPool::sys_alloc(size_t cap) {
   capacity = a->round_up_align(cap);
-  mem = a->malloc(capacity);
+  mem = a->mymalloc(capacity);
   if (mem == NULL)
     DYNET_RUNTIME_ERR(name << " failed to allocate " << capacity);
   used = 0;
@@ -51,7 +51,8 @@ AlignedMemoryPool::AlignedMemoryPool(const std::string &name, size_t initial_cap
   }
 }
 AlignedMemoryPool::~AlignedMemoryPool() {
-  for ( auto p : pools) { delete p; }
+  for (auto p : pools) { delete p; p = nullptr; }
+  pools.clear();
 }
 
 void* AlignedMemoryPool::allocate(size_t n) {
@@ -72,9 +73,9 @@ void* AlignedMemoryPool::allocate(size_t n) {
   return res;
 }
 
-void AlignedMemoryPool::free() {
+void AlignedMemoryPool::myfree() {
   if (current > 0) {
-    for (auto p : pools) { delete p; }
+    for (auto p : pools) { delete p; p = nullptr; }
     pools.clear();
     if (dynamic) {
       pools.push_back(new DynamicCPUMemoryPool(name, cap));
@@ -84,7 +85,7 @@ void AlignedMemoryPool::free() {
     cap = cap * (current + 1);
     current = 0;
   }
-  pools[0]->free();
+  pools[0]->myfree();
 }
 
 void AlignedMemoryPool::zero_allocated_memory() {

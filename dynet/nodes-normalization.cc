@@ -36,7 +36,7 @@ void WeightNormalization::forward_dev_impl(const MyDevice & dev, const vector<co
   tmp.v = static_cast<float*>(scratch_allocator->allocate(tmp.d.size() * sizeof(float)));
   tvec(tmp).device(*dev.edevice) = tvec(*xs[0]).square().sum(red_axis).sqrt().reshape(morph);
   tvec(fx).device(*dev.edevice) = (tvec(*xs[0]) / tvec(tmp).broadcast(bcast)) * as_scalar(*xs[1]);
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 
 template<class MyDevice>
@@ -61,7 +61,7 @@ void WeightNormalization::backward_dev_impl(const MyDevice & dev,
   }else{
     t<0>(dEdxi).device(*dev.edevice) += ((tvec(dEdf) * tvec(*xs[0])).sum(red_axis)) /  tvec(*xs[0]).square().sum(red_axis).sqrt();
   }
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 DYNET_NODE_INST_DEV_IMPL(WeightNormalization)
 

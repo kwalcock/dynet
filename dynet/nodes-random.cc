@@ -34,7 +34,7 @@ void GaussianNoise::forward_dev_impl(const MyDevice & dev, const vector<const Te
 
   tvec(fx).device(*dev.edevice) = tvec(*xs[0]) + tvec(noise);
 
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 
 template<class MyDevice>
