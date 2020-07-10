@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/tensor-eigen.h"
 #include "dynet/param-nodes.h"
 
@@ -81,7 +82,7 @@ Node* InputNode::autobatch_pseudo_node(const ComputationGraph & cg,
     curr_pos += sin->pdata->size();
   }
   DYNET_ASSERT(curr_pos == values.size(), "current position and size of values does not match");
-  return new InputNode(Dim({(unsigned int)my_size}), values);
+  return DBG_NEW InputNode(Dim({(unsigned int)my_size}), values);
 }
 
 string SparseInputNode::as_string(const vector<string>& arg_names) const {
@@ -124,7 +125,7 @@ Node* ScalarInputNode::autobatch_pseudo_node(const ComputationGraph & cg,
     sin = static_cast<ScalarInputNode*>(cg.nodes[batch_ids[i]]);
     values[i] = *sin->pdata;
   }
-  return new InputNode(Dim({1}, batch_ids.size()), values);
+  return DBG_NEW InputNode(Dim({1}, batch_ids.size()), values);
 }
 
 int LookupNode::autobatch_sig(const ComputationGraph & cg, SigMap &sm) const {
@@ -147,7 +148,7 @@ Node* LookupNode::autobatch_pseudo_node(const ComputationGraph & cg,
       for(auto word_id : *ln->pindices)
         ids.push_back(word_id);
   }
-  return new LookupNode(ln->params, ids);
+  return DBG_NEW LookupNode(ln->params, ids);
 }
 
 

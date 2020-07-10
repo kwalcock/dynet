@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/exec.h"
 
 #include <unordered_map>
@@ -37,9 +38,9 @@ vector<const Tensor*> ExecutionEngine::forward(
 SimpleExecutionEngine::SimpleExecutionEngine(const ComputationGraph& cg) :
   ExecutionEngine(cg), num_nodes_evaluated(0) {
   if (default_device->pools[0]->is_dynamic()) {
-    mem = new CPUAllocator();
-    pool_fxs   = new AlignedMemoryPool("CPU forward memory",  1 << 24, mem, 1 << 24, true);
-    pool_dEdfs = new AlignedMemoryPool("CPU backward memory", 1 << 24, mem, 1 << 24, true);
+    mem = DBG_NEW CPUAllocator();
+    pool_fxs   = DBG_NEW AlignedMemoryPool("CPU forward memory",  1 << 24, mem, 1 << 24, true);
+    pool_dEdfs = DBG_NEW AlignedMemoryPool("CPU backward memory", 1 << 24, mem, 1 << 24, true);
   } else {
     pool_fxs   = default_device->pools[(int)DeviceMempool::FXS];
     pool_dEdfs = default_device->pools[(int)DeviceMempool::DEDFS];
@@ -881,7 +882,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
             // 2.a) the inputs need to be concatenated, but are already in the
             // right order within a contiguous block of memory.
             // TODO: make this work completely
-            Tensor* my_xsi = new Tensor;
+            Tensor* my_xsi = DBG_NEW Tensor;
             my_xsi->device = node->device;
             my_xsi->mem_pool = DeviceMempool::FXS;
 

@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/io.h"
 #include "dynet/tensor.h"
 #include "dynet/except.h"
@@ -61,7 +62,7 @@ Loader::~Loader() {}
 
 TextFileSaver::TextFileSaver(const std::string & filename, bool append) :
         p_datastream(
-            new std::ofstream(
+            DBG_NEW std::ofstream(
                 filename.c_str(),
                 (append ? std::ios_base::app : std::ios_base::out) | std::ios_base::binary)),
         datastream(*p_datastream) {

@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/aligned-mem-pool.h"
 #include "dynet/devices.h"
 
@@ -45,9 +46,9 @@ void InternalMemoryPool::sys_alloc(size_t cap) {
 AlignedMemoryPool::AlignedMemoryPool(const std::string &name, size_t initial_cap, MemAllocator *a, size_t expanding_unit, bool dynamic) : name(name), cap(initial_cap), current(0), a(a), expanding_unit(expanding_unit), dynamic(dynamic) {
   DYNET_ARG_CHECK(cap > 0, "Attempt to allocate memory of size 0 in AlignedMemoryPool");
   if (dynamic) {
-    pools.push_back(new DynamicCPUMemoryPool(name, cap));
+    pools.push_back(DBG_NEW DynamicCPUMemoryPool(name, cap));
   } else {
-    pools.push_back(new InternalMemoryPool(name, cap, a));
+    pools.push_back(DBG_NEW InternalMemoryPool(name, cap, a));
   }
 }
 AlignedMemoryPool::~AlignedMemoryPool() {
@@ -61,9 +62,9 @@ void* AlignedMemoryPool::allocate(size_t n) {
     // round up to the nearest multiple of expanding_unit
     size_t new_pool_size  = (n + expanding_unit-1) / expanding_unit * expanding_unit;
     if (dynamic) {
-      pools.push_back(new DynamicCPUMemoryPool(name, new_pool_size));
+      pools.push_back(DBG_NEW DynamicCPUMemoryPool(name, new_pool_size));
     } else {
-      pools.push_back(new InternalMemoryPool(name, new_pool_size, a));
+      pools.push_back(DBG_NEW InternalMemoryPool(name, new_pool_size, a));
     }
     cap += new_pool_size;
     current++;
@@ -78,9 +79,9 @@ void AlignedMemoryPool::myfree() {
     for (auto p : pools) { delete p; p = nullptr; }
     pools.clear();
     if (dynamic) {
-      pools.push_back(new DynamicCPUMemoryPool(name, cap));
+      pools.push_back(DBG_NEW DynamicCPUMemoryPool(name, cap));
     } else {
-      pools.push_back(new InternalMemoryPool(name, cap, a));
+      pools.push_back(DBG_NEW InternalMemoryPool(name, cap, a));
     }
     cap = cap * (current + 1);
     current = 0;
