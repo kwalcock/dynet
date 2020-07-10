@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -89,7 +90,7 @@ vector<Device*> initialize_gpu(DynetParams& params) {
   cerr << "[dynet] Device(s) selected:";
   for (int i = 0; i < params.requested_gpus; ++i) {
     cerr << ' ' << gpus[i];
-    Device* d = new Device_GPU(gpudevices.size(), params.mem_descriptor,
+    Device* d = DBG_NEW Device_GPU(gpudevices.size(), params.mem_descriptor,
                                gpus[i], params.random_seed);
     gpudevices.push_back(d);
   }

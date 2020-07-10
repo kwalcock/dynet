@@ -1,4 +1,4 @@
-
+#include "dynet/mem_debug.h"
 #include "dynet/tensor.h"
 #include "dynet/tensor-eigen.h"
 #include "dynet/index-tensor.h"
@@ -239,7 +239,7 @@ void TensorTools::identity(Tensor& val) {
         val.v[pos++] = (i == j ? 1 : 0);
 #if HAVE_CUDA
   } else if (val.device->type == DeviceType::GPU) {
-    float* t = new float[val.d.size()];
+    float* t = DBG_NEW float[val.d.size()];
     for (size_t i = 0; i < val.d[0]; ++i)
       for (size_t j = 0; j < val.d[1]; ++j)
         t[pos++] = (i == j ? 1 : 0);

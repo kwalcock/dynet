@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/tensor-eigen.h"
 #include "dynet/nodes-pickneglogsoftmax.h"
 
@@ -66,7 +67,7 @@ Node* PickNegLogSoftmax::autobatch_pseudo_node(const ComputationGraph & cg,
       for(auto word_id : *ln->pvals)
         ids.push_back(word_id);
   }
-  return new PickNegLogSoftmax({(VariableIndex)1}, ids);
+  return DBG_NEW PickNegLogSoftmax({(VariableIndex)1}, ids);
 }
 
 size_t PickNegLogSoftmax::aux_storage_size() const {
