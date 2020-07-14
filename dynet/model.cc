@@ -96,6 +96,10 @@ ParameterStorage::ParameterStorage(const Dim& d, const ParameterInit & init,
   init.initialize_params(values);
 }
 
+ParameterStorage::~ParameterStorage() {
+  
+}
+
 size_t ParameterStorage::size() const { return dim.size(); }
 
 void ParameterStorage::zero() {
@@ -266,6 +270,11 @@ ParameterCollectionStorage::ParameterCollectionStorage(float weight_decay_lambda
 ParameterCollectionStorage::~ParameterCollectionStorage() {
   if (gradient_norm_scratch)
     device_manager->get_global_device("CPU")->mem->myfree(gradient_norm_scratch);
+
+  // Won't this be done automatically?
+  lookup_params.clear();
+  params.clear();
+  all_params.clear();
 }
 
 void ParameterCollectionStorage::project_weights(float radius) {
@@ -288,10 +297,17 @@ void ParameterCollectionStorage::project_weights(float radius) {
   cerr << "NORM: " << sqrt(gg) << endl;
 }
 
-ParameterCollection::ParameterCollection() : name("/"), storage(DBG_NEW ParameterCollectionStorage(default_weight_decay_lambda)), parent(nullptr) { }
+ParameterCollection::ParameterCollection() : name("/"), storage(DBG_NEW ParameterCollectionStorage(default_weight_decay_lambda)),
+    parent(nullptr) {
+  delete storage; storage = nullptr;
+  storage = DBG_NEW ParameterCollectionStorage(default_weight_decay_lambda);
+}
 
 ParameterCollection::ParameterCollection(const string & my_name, ParameterCollection* my_parent, float weight_decay_lambda) :
-    name(my_name), storage(DBG_NEW ParameterCollectionStorage(weight_decay_lambda)), parent(my_parent) { }
+    name(my_name), storage(DBG_NEW ParameterCollectionStorage(weight_decay_lambda)), parent(my_parent) {
+  delete storage; storage = nullptr;
+  storage = DBG_NEW ParameterCollectionStorage(weight_decay_lambda);
+}
 
 ParameterCollection ParameterCollection::add_subcollection(const string & sub_name, float weight_decay_lambda) {
   if (weight_decay_lambda < 0) { weight_decay_lambda = get_weight_decay_lambda(); }
@@ -300,14 +316,15 @@ ParameterCollection ParameterCollection::add_subcollection(const string & sub_na
     int idx = collec_name_cntr[sub_name]++;
     if (idx > 0 || sub_name.size() == 0) oss << "_" << idx;
     oss << "/";
-    return ParameterCollection(oss.str(), this, weight_decay_lambda);
+    string new_name = oss.str();
+    return ParameterCollection(new_name, this, weight_decay_lambda);
   } else {
     throw std::runtime_error("Submodel name could not include '/' and '_'");
   }
 }
 
 ParameterCollection::~ParameterCollection() {
-  if (parent == nullptr && storage != nullptr) {
+  if (/*parent == nullptr &&*/ storage != nullptr) {
     delete storage;
     storage = nullptr;
   }

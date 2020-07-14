@@ -149,6 +149,7 @@ struct ParameterStorage : public ParameterStorageBase {
 
 protected:
   ParameterStorage() : updated(true), owner(nullptr) {}
+  virtual ~ParameterStorage();
   explicit ParameterStorage(const Dim& d, float scale,
                             const std::string & name, Device *device); // initialize with a scale
   explicit ParameterStorage(const Dim& d, const ParameterInit & init,

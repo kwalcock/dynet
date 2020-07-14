@@ -2,7 +2,7 @@
 
 #include <dynet/dynet.h>
 #include <dynet/lstm.h>
-
+#include <memory>
 #include <thread>
 
 /*
@@ -40,6 +40,12 @@ int main(int _argc, char** _argv) {
   dynet::initialize(argc, argv);
   debugMem(__FILE__, __LINE__);
 
+  char* kwa = (char*) malloc(4);
+  kwa[0] = 'H';
+  kwa[1] = 'i';
+  kwa[2] = '!';
+  kwa[3] = '\0';
+
   const int layers = 2;
   const unsigned int inputDim = 3;
   const unsigned int hiddenDim = 10;
@@ -47,8 +53,8 @@ int main(int _argc, char** _argv) {
   {
     std::vector<std::vector<float>> results(threadCount);
     {
-//      dynet::ParameterCollection model;
-//      dynet::VanillaLSTMBuilder protoLstmBuilder(layers, inputDim, hiddenDim, model);
+      dynet::ParameterCollection model;
+      dynet::VanillaLSTMBuilder protoLstmBuilder(layers, inputDim, hiddenDim, model);
 //      dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
 //      dynet::autobatch_flag = 0;
 

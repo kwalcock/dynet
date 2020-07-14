@@ -14,7 +14,7 @@ MemDebug::MemDebug() {
 }
 
 MemDebug::~MemDebug() {
-  debugMem(__FILE__, __LINE__);
+//  debugMem(__FILE__, __LINE__);
 }
 
 MemDebug memDebug;
