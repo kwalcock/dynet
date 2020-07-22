@@ -319,10 +319,14 @@ VanillaLSTMBuilder::VanillaLSTMBuilder() : has_initial_state(false), layers(0), 
 VanillaLSTMBuilder::VanillaLSTMBuilder(unsigned layers, unsigned input_dim, unsigned hidden_dim,
   ParameterCollection& model, bool ln_lstm, float forget_bias) :
   // This is preventing crash on Windows.
+  // This is in the correct place, before layers.
   local_model(model.add_subcollection("vanilla-lstm-builder")), layers(layers), input_dim(input_dim), hid(hidden_dim), ln_lstm(ln_lstm), forget_bias(forget_bias),
   dropout_masks_valid(false) {
   unsigned layer_input_dim = input_dim;
-//  local_model = model.add_subcollection("vanilla-lstm-builder");
+  // When this parameter collection gets copied, the storage pointer gets copied
+  // with it.  Then, when one or the other local_model or model is deleted, it will
+  // delete the storage pointer and the other one won't be able to use it.
+  //local_model = model.add_subcollection("vanilla-lstm-builder");
   for (unsigned i = 0; i < layers; ++i) {
     // i
     Parameter p_x2i = local_model.add_parameters({hidden_dim * 4, layer_input_dim});
