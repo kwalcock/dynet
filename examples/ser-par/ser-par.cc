@@ -18,7 +18,7 @@ It does not work with dynamic memory if thread count is 2.
 int main(int _argc, char** _argv) {
   debugMem(__FILE__, __LINE__);
 
-  const int threadCount = 8;
+  const int threadCount = 1; // 8
 
   std::cout << "Program started for " << threadCount << " threads!" << std::endl;
 
@@ -55,12 +55,11 @@ int main(int _argc, char** _argv) {
     {
       dynet::ParameterCollection model;
       dynet::VanillaLSTMBuilder protoLstmBuilder(layers, inputDim, hiddenDim, model);
-//      dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
-//      dynet::autobatch_flag = 0;
+      dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
+      dynet::autobatch_flag = 0;
 
       debugMem(__FILE__, __LINE__);
 
-      /*
       std::vector<std::thread> threads(threadCount);
       for (size_t t = 0; t < threadCount; ++t) {
         threads[t] = std::thread([&, t]() {
@@ -104,8 +103,8 @@ int main(int _argc, char** _argv) {
           std::cout << "Thread " << t << " finished!" << std::endl;
         });
       }
-*/
-//      for (size_t t = 0; t < threadCount; ++t) threads[t].join();
+
+      for (size_t t = 0; t < threadCount; ++t) threads[t].join();
 //      for (size_t t = 0; t < threadCount; ++t)
 //        for (size_t i = 1; i < results[t].size(); ++i)
 //          if (abs(results[t][0] - results[t][i]) >= 0.0001)
