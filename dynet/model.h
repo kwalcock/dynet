@@ -745,7 +745,7 @@ private:
   ParameterCollection(const std::string & name, ParameterCollection* parent, float weight_decay_lambda);
   std::string name;
   std::unordered_map<std::string,int> name_cntr, collec_name_cntr;
-  ParameterCollectionStorage * storage;
+  mutable std::shared_ptr<ParameterCollectionStorage> storage;
   ParameterCollection * parent;
 }; // class ParameterCollection
 

@@ -297,16 +297,13 @@ void ParameterCollectionStorage::project_weights(float radius) {
   cerr << "NORM: " << sqrt(gg) << endl;
 }
 
-ParameterCollection::ParameterCollection() : name("/"), storage(DBG_NEW ParameterCollectionStorage(default_weight_decay_lambda)),
+ParameterCollection::ParameterCollection() : name("/"),
+    storage(DBG_NEW ParameterCollectionStorage(default_weight_decay_lambda)),
     parent(nullptr) {
-  delete storage; storage = nullptr;
-  storage = DBG_NEW ParameterCollectionStorage(default_weight_decay_lambda);
 }
 
 ParameterCollection::ParameterCollection(const string & my_name, ParameterCollection* my_parent, float weight_decay_lambda) :
     name(my_name), storage(DBG_NEW ParameterCollectionStorage(weight_decay_lambda)), parent(my_parent) {
-  delete storage; storage = nullptr;
-  storage = DBG_NEW ParameterCollectionStorage(weight_decay_lambda);
 }
 
 ParameterCollection ParameterCollection::add_subcollection(const string & sub_name, float weight_decay_lambda) {
@@ -325,8 +322,8 @@ ParameterCollection ParameterCollection::add_subcollection(const string & sub_na
 
 ParameterCollection::~ParameterCollection() {
   if (/*parent == nullptr &&*/ storage != nullptr) {
-    delete storage;
-    storage = nullptr;
+//    delete storage;
+//    storage = nullptr;
   }
 }
 
@@ -512,22 +509,36 @@ size_t ParameterCollection::updated_parameter_count() const {
 
 ParameterCollectionStorage& ParameterCollection::get_storage() {
   if(storage == nullptr) {
-    if (parent == nullptr)
-      storage = DBG_NEW ParameterCollectionStorage(default_weight_decay_lambda);
+    if (parent == nullptr) {
+      ParameterCollectionStorage* pcs = DBG_NEW ParameterCollectionStorage(default_weight_decay_lambda);
+      storage = shared_ptr<ParameterCollectionStorage>(pcs);
+    }
     else
       DYNET_RUNTIME_ERR("ParameterCollection::get_storage() not implemented yet for subsets");
   }
   return *storage;
 }
-
+/*
+Cast away constness, call other function, cast result?
 const ParameterCollectionStorage& ParameterCollection::get_storage() const {
-  if(storage == nullptr) {
-    if (parent == nullptr)
-      const_cast<ParameterCollectionStorage*&>(storage) = DBG_NEW ParameterCollectionStorage(default_weight_decay_lambda);
+  if (storage == nullptr) {
+    if (parent == nullptr) {
+      ParameterCollectionStorage* pcs = DBG_NEW ParameterCollectionStorage(default_weight_decay_lambda);
+      storage = make_shared<ParameterCollectionStorage>(pcs);
+    }
     else
       DYNET_RUNTIME_ERR("ParameterCollection::get_storage() not implemented yet for subsets");
   }
   return *storage;
+}
+*/
+
+const ParameterCollectionStorage& ParameterCollection::get_storage() const {
+  ParameterCollection* mutableThis = (ParameterCollection*) this;
+  ParameterCollectionStorage& mutableStorage = mutableThis->get_storage();
+  const ParameterCollectionStorage constStorage = const_cast<ParameterCollectionStorage&>(mutableStorage);
+
+  return constStorage;
 }
 
 void save_dynet_model(std::string filename, ParameterCollection* model) {

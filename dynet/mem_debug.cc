@@ -10,7 +10,7 @@ void debugMem(char* file, int line) {
 
 MemDebug::MemDebug() {
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-  debugMem(__FILE__, __LINE__);
+//  debugMem(__FILE__, __LINE__);
 }
 
 MemDebug::~MemDebug() {
