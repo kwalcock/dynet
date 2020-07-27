@@ -16,6 +16,8 @@ void* DynamicCPUMemoryPool::allocate(size_t n) {
   auto rounded_n = a->round_up_align(n);
   void* res = a->mymalloc(rounded_n);
   if (res) {
+    std::lock_guard<std::mutex> guard(dynamicMutex);
+    // These two operations need to be kept in sync.
     ptrs.push_back(res);
     sizes.push_back(rounded_n);
   }
@@ -57,6 +59,7 @@ AlignedMemoryPool::~AlignedMemoryPool() {
 }
 
 void* AlignedMemoryPool::allocate(size_t n) {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   void *res = pools[current]->allocate(n);
   if (res == 0) {
     // round up to the nearest multiple of expanding_unit
@@ -75,6 +78,7 @@ void* AlignedMemoryPool::allocate(size_t n) {
 }
 
 void AlignedMemoryPool::myfree() {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   if (current > 0) {
     for (auto p : pools) { delete p; p = nullptr; }
     pools.clear();
@@ -90,10 +94,12 @@ void AlignedMemoryPool::myfree() {
 }
 
 void AlignedMemoryPool::zero_allocated_memory() {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   for (auto p : pools) { p->zero_allocated_memory(); }
 }
 
 size_t AlignedMemoryPool::used() {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   if (current == 0) {
     return pools[0]->used;
   }
@@ -103,6 +109,7 @@ size_t AlignedMemoryPool::used() {
 }
 
 void AlignedMemoryPool::set_used(size_t s) {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   if(s != pools.back()->used) {
     DYNET_ARG_CHECK(pools.size() == 1, "Dynet does not support both dynamic increasing of memory pool size, and automatic batching or memory checkpointing. If you want to use automatic batching or checkpointing, please pre-allocate enough memory using the --dynet-mem command line option (details http://dynet.readthedocs.io/en/latest/commandline.html).");
     pools[0]->used = s;
@@ -120,5 +127,6 @@ void AlignedMemoryPool::set_used(size_t s) {
 }
 
 size_t AlignedMemoryPool::get_cap() {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   return cap;
 }

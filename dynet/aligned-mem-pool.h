@@ -4,6 +4,7 @@
 #include "dynet/mem_debug.h"
 
 #include <iostream>
+#include <mutex>
 #include "dynet/mem.h"
 #include "dynet/globals.h"
 #include "dynet/except.h"
@@ -35,6 +36,7 @@ class DynamicCPUMemoryPool : public BaseMemoryPool {
  private:
   std::vector<void*> ptrs;
   std::vector<size_t> sizes;
+  std::mutex dynamicMutex;
 
  public:
   explicit DynamicCPUMemoryPool(const std::string & name, size_t cap)
@@ -126,6 +128,7 @@ class AlignedMemoryPool {
     MemAllocator* a;
     size_t expanding_unit;
     bool dynamic;
+    std::mutex alignedMutex;
 };
 
 } // namespace dynet
