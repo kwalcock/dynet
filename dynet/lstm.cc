@@ -314,7 +314,7 @@ enum { LN_GH, LN_BH, LN_GX, LN_BX, LN_GC, LN_BC};
 
 
 
-VanillaLSTMBuilder::VanillaLSTMBuilder() : has_initial_state(false), layers(0), input_dim(0), hid(0), dropout_rate_h(0), ln_lstm(false), forget_bias(1.f), dropout_masks_valid(false) { }
+VanillaLSTMBuilder::VanillaLSTMBuilder() : has_initial_state(false), layers(0), input_dim(0), hid(0), dropout_rate_h(0), ln_lstm(false), forget_bias(1.f), dropout_masks_valid(false), _cg(nullptr) { }
 
 VanillaLSTMBuilder::VanillaLSTMBuilder(unsigned layers, unsigned input_dim, unsigned hidden_dim,
   ParameterCollection& model, bool ln_lstm, float forget_bias) :
