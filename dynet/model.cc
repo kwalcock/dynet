@@ -302,6 +302,11 @@ ParameterCollection::ParameterCollection() : name("/"),
     parent(nullptr) {
 }
 
+ParameterCollection::ParameterCollection(float weight_decay_lambda) : name("/"),
+    storage(DBG_NEW ParameterCollectionStorage(weight_decay_lambda)),
+    parent(nullptr) {
+}
+
 ParameterCollection::ParameterCollection(const string & my_name, ParameterCollection* my_parent, float weight_decay_lambda) :
     name(my_name), storage(DBG_NEW ParameterCollectionStorage(weight_decay_lambda)), parent(my_parent) {
 }
