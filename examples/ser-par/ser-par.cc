@@ -6,22 +6,31 @@
 
 #include <memory>
 #include <mutex>
+#include <strstream>
 #include <thread>
 
-/*
-It works without dynamic memory if thread count is 1.
-It does not work without dynamic memory if thread count is 2.
-  An exception is purposely thrown from the C++ code.
 
-It works with dynamic memory if thread count is 1.
-It does not work with dynamic memory if thread count is 2.
-  An exception is thrown by the OS during operator delete.
-*/
+std::string mkFilename(int index, int t, char* id) {
+  std::strstream stream;
+  stream << "cg_i" << index << "_t" << t << "_" << id << ".txt" << std::ends;
+  std::string string = stream.str();
+  return string;
+}
+
+void dumpCgs(dynet::ComputationGraph** cgs, int index, int t, char* id) {
+  cgs[t]->dump(mkFilename(index, t, id), true, true, false);
+}
+
+void myDebugMem(char* file, int line) {
+//  debugMem(file, line);
+}
 
 int main(int _argc, char** _argv) {
+  // Guarantee that despite lack of debugMem statements there is a MemDebug
+  // object in memory.  The global one in mem_debug.cc seems to disappear.
   MemDebug myMemDebug;
 
-//  debugMem(__FILE__, __LINE__);
+  myDebugMem(__FILE__, __LINE__);
 
   const int threadCount = 2;
 
@@ -36,15 +45,11 @@ int main(int _argc, char** _argv) {
   char** argv = &args[0];
   int argc = 7;
 
-//  debugMem(__FILE__, __LINE__);
-  int* test = new int[10];
-//  debugMem(__FILE__, __LINE__);
-  delete test;
-//  debugMem(__FILE__, __LINE__);
-
   dynet::initialize(argc, argv);
-//  debugMem(__FILE__, __LINE__);
+  myDebugMem(__FILE__, __LINE__);
 
+  // This guarantees a memory leak which when displayed at program termination
+  // verifies that leak detection is active.
   char* kwa = (char*) malloc(4);
   kwa[0] = 'H';
   kwa[1] = 'i';
@@ -52,7 +57,7 @@ int main(int _argc, char** _argv) {
   kwa[3] = '\0';
 
   const int layers = 2;
-  const unsigned int inputDim = 3;
+  const unsigned int inputDim = 1;
   const unsigned int hiddenDim = 10;
 
   std::mutex coutMutex;
@@ -62,95 +67,81 @@ int main(int _argc, char** _argv) {
   dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
   dynet::autobatch_flag = 0;
 
-  for (int i = 0; i < 100; ++i)
+  for (int i = 0; i < 20; ++i)
   {
     std::vector<std::vector<float>> results(threadCount);
-    {
+    // This block assured that the variables below were destructed.
+//    {
+      myDebugMem(__FILE__, __LINE__);
+      // This is usually done internally to a thread and not in duplicate like this.
+      // However, this way the cgs can be analyzed after the computation.
+      dynet::ComputationGraph cg0, cg1;
+      dynet::VanillaLSTMBuilder lstmBuilder0(protoLstmBuilder), lstmBuilder1(protoLstmBuilder);
+      dynet::LookupParameter lookupParameter0(protoLookupParameter), lookupParameter1(protoLookupParameter);
+      std::vector<dynet::Expression> losses0;
+      std::vector<dynet::Expression> losses1;
 
-//      debugMem(__FILE__, __LINE__);
+      dynet::ComputationGraph* cgs[] = { &cg0, &cg1 };
+      dynet::VanillaLSTMBuilder* lstmBuilders[] = { &lstmBuilder0, &lstmBuilder1 };
+      dynet::LookupParameter* lookupParameters[] = { &lookupParameter0, &lookupParameter1 };
+      std::vector<dynet::Expression>* losseses[] = { &losses0, &losses1 };
 
       std::vector<std::thread> threads(threadCount);
       for (size_t t = 0; t < threadCount; ++t) {
-        threads[t] = std::thread([&, t]() {
+        // Comment out for serial processing.
+//        threads[t] = std::thread([&, t]() {
           {
             std::lock_guard<std::mutex> guard(coutMutex);
             std::cout << "Thread " << t << " started!" << std::endl;
           }
-          dynet::ComputationGraph cg;
-          dynet::VanillaLSTMBuilder lstmBuilder(protoLstmBuilder);
-          dynet::LookupParameter lookupParameter(protoLookupParameter);
-          lstmBuilder.new_graph(cg, false); // Do not update things
-
-          dynet::Tensor luValues = lookupParameter.values()->at(0);
-          dynet::Tensor luValues0 = luValues.batch_elem(0);
-          float* floats = luValues0.v;
-          {
-            for (int i = 0; i < inputDim * hiddenDim; ++i) {
-              std::lock_guard<std::mutex> guard(coutMutex);
-              float f = floats[i];
-              std::cout << f << " ";
-            }
-            std::cout << std::endl << std::endl;
-          }
-
+          lstmBuilders[t]->new_graph(*cgs[t], false); // Do not update things
+          dumpCgs(cgs, i, t, "a");
           std::vector<dynet::Expression> losses;
           for (size_t j = 0; j < inputDim; ++j) {
-            lstmBuilder.start_new_sequence();
+            lstmBuilders[t]->start_new_sequence();
             for (size_t k = 0; k < inputDim; ++k) {
-              dynet::Expression x = dynet::lookup(cg, lookupParameter, j * inputDim + k);
-              lstmBuilder.add_input(x);
+              dynet::Expression x = dynet::lookup(*cgs[t], *lookupParameters[t], j * inputDim + k);
+              lstmBuilders[t]->add_input(x);
             }
-            losses.push_back(dynet::squared_norm(lstmBuilder.final_h()[layers - 1]));
+            dumpCgs(cgs, i, t, "b");
+            losseses[t]->push_back(dynet::squared_norm(lstmBuilders[t]->final_h()[layers - 1]));
+            dumpCgs(cgs, i, t, "c");
           }
 //          losses.push_back(losses[0] + losses[inputDim - 1]);
 
-          auto l0_value_scalar = dynet::as_scalar(losses[0].value());
-          
-          if (std::abs(l0_value_scalar - 0.00966324471) > 0.0001)
+          auto l0_value_scalar = dynet::as_scalar((*losseses[t])[0].value());
+          dumpCgs(cgs, i, t, "d");
+
+//          if (std::abs(l0_value_scalar - 0.00966324471) > 0.0001)
+//          if (std::abs(l0_value_scalar - 0.00220352481) > 0.0001)
+          if (std::abs(l0_value_scalar - 0.000341659179) > 0.0001)
             std::cout << "Wrong answer!" << std::endl;
           else
             std::cout << "Right answer!" << std::endl;
-          auto l1_value_scalar = dynet::as_scalar(losses[1].value());
-//          auto l2_value_scalar = dynet::as_scalar(losses[2].value());
-//          auto l3_value_scalar = dynet::as_scalar(losses[3].value());
 
-
-          // Use this one if have internal sum.
-//          if (std::abs(z_value_scalar - 0.0250536269) > 0.0001) {
-//          if (std::abs(z_value_scalar - 0.0145669077) > 0.0001) {            
-          if (std::abs(l1_value_scalar - 0.00408018893) > 0.0001) {
-              std::cout << "Wrong answer!" << std::endl;
-          }
-          else
-            std::cout << "Right answer!" << std::endl;
-
-//          dynet::Expression z = dynet::sum(losses);
-//          auto z_value = z.value(); // Sometimes crashes here.
-//          auto z_value_scalar = dynet::as_scalar(z_value);
-
-//          results[t].push_back(z_value_scalar);
+          results[t].push_back(l0_value_scalar);
           {
             std::lock_guard<std::mutex> guard(coutMutex);
             std::cout << "Thread " << t << " finished!" << std::endl;
           }
-        });
+//        });
       }
 
-      for (size_t t = 0; t < threadCount; ++t) threads[t].join();
-    }
-
-
-
+      //for (size_t t = 0; t < threadCount; ++t) threads[t].join();
+//    }
 
 //    for (size_t t = 1; t < threadCount; ++t)
 //      for (size_t i = 1; i < results[t].size(); ++i)
 //        if (abs(results[0][0] - results[t][0]) >= 0.0001)
-//          std::cerr << "Parallel test failed!" << std::endl;
-//    std::cout << std::endl;
+    if (abs(results[0][0] - results[1][0]) >= 0.0001)
+      std::cerr << "Parallel test failed!" << std::endl;
+    dumpCgs(cgs, i, 0, "e");
+    dumpCgs(cgs, i, 1, "e");
+    std::cout << std::endl;
   }
 
-//  debugMem(__FILE__, __LINE__);
+  myDebugMem(__FILE__, __LINE__);
   dynet::cleanup();
-//  debugMem(__FILE__, __LINE__);
+  myDebugMem(__FILE__, __LINE__);
   std::cout << "Program finished!" << std::endl;
 }
