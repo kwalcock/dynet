@@ -51,6 +51,7 @@ class DynamicCPUMemoryPool : public BaseMemoryPool {
   void zero(void* p, size_t n); 
 
   void myfree() {
+    zero_allocated_memory(); // Do this first so that can't reuse memory.
     for (auto p : ptrs)
       a->myfree(p);
     ptrs.clear();

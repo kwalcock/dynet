@@ -459,6 +459,7 @@ void ComputationGraph::print_graphviz() const {
         }
       }
       else {
+        out << (value.is_valid() ? "valid" : "invalid");
         out << std::endl << value;
       }
       out << std::endl;
@@ -477,6 +478,7 @@ void ComputationGraph::print_graphviz() const {
           }
         }
         else {
+          out << (gradient.is_valid() ? "valid" : "invalid");
           out << std::endl << gradient;
         }
         out << std::endl;

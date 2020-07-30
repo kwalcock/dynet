@@ -110,7 +110,8 @@ const Tensor& SimpleExecutionEngine::incremental_forward(VariableIndex i) {
   // free any old memory if this is a new CG
   if (num_nodes_evaluated == 0)
     for (Device* dev : device_manager->get_devices())
-      dev->pools[(int)DeviceMempool::FXS]->myfree();
+      std::cout << "Not really freeing!" << std::endl;
+//      dev->pools[(int)DeviceMempool::FXS]->myfree();
 
   if (i >= num_nodes_evaluated) {
     nfxs.resize(i + 1);
