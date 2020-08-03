@@ -3,25 +3,26 @@
 
 #ifdef _DEBUG
 
-void debugMem(char* file, int line) {
+void debugMem(const char* file, int line) {
+#ifdef _MSC_VER
   std::cerr << "Memory leaks in " << file << " at line " << line << std::endl;
   _CrtDumpMemoryLeaks();
+#endif
 }
 
 MemDebug::MemDebug() {
+#ifdef _MSC_VER
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-//  debugMem(__FILE__, __LINE__);
+#endif
 }
 
 MemDebug::~MemDebug() {
   debugMem(__FILE__, __LINE__);
 }
 
-MemDebug memDebug;
-
 #else
 
-void debugMem(char* file, int line) {
+void debugMem(const char* file, int line) {
   // no-op
 }
 
