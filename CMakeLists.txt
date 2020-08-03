@@ -87,7 +87,7 @@ else()
   endif()
   message("-- Optimization level: ${RELEASE_OPT_LEVEL}")
 
-  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -fno-omit-frame-pointer -fsanitize=leak")
   set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O${RELEASE_OPT_LEVEL} -march=x86-64")
 endif()
 

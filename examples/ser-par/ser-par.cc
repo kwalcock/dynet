@@ -10,25 +10,25 @@
 #include <thread>
 
 
-std::string mkFilename(int index, int t, char* id) {
+std::string mkFilename(int index, int t, const char* id) {
   std::strstream stream;
   stream << "cg_i" << index << "_t" << t << "_" << id << ".txt" << std::ends;
   std::string string = stream.str();
   return string;
 }
 
-void dumpCgs(dynet::ComputationGraph** cgs, int index, int t, char* id) {
-  cgs[t]->dump(mkFilename(index, t, id), true, true, false);
+void dumpCgs(dynet::ComputationGraph** cgs, int index, int t, const char* id) {
+//  cgs[t]->dump(mkFilename(index, t, id), true, true, false);
 }
 
-void myDebugMem(char* file, int line) {
+void myDebugMem(const char* file, int line) {
 //  debugMem(file, line);
 }
 
 int main(int _argc, char** _argv) {
   // Guarantee that despite lack of debugMem statements there is a MemDebug
   // object in memory.  The global one in mem_debug.cc seems to disappear.
-  MemDebug myMemDebug;
+//  MemDebug myMemDebug;
 
   myDebugMem(__FILE__, __LINE__);
 
@@ -36,15 +36,15 @@ int main(int _argc, char** _argv) {
 
   std::cout << "Program started for " << threadCount << " threads!" << std::endl;
 
-  char* args[] = {
+  const char* args[] = {
     "",
     "--dynet-seed", "10",
     "--dynet-mem", "1",
     "--dynet-dynamic-mem", "1",
     "--dynet-forward-only", "1" // Does this imply the above?
   };
-  char** argv = &args[0];
-  int argc = 7;
+  char** argv = (char**) &args[0];
+  int argc = 9;
 
   dynet::initialize(argc, argv);
   myDebugMem(__FILE__, __LINE__);
@@ -67,7 +67,7 @@ int main(int _argc, char** _argv) {
   dynet::VanillaLSTMBuilder protoLstmBuilder(layers, inputDim, hiddenDim, model);
   dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
 
-  for (int i = 0; i < 20; ++i)
+  for (int i = 0; i < 100; ++i)
   {
     std::vector<std::vector<float>> results(threadCount);
     // This block assured that the variables below were destructed.
@@ -124,7 +124,7 @@ int main(int _argc, char** _argv) {
 //          if (std::abs(l0_value_scalar - 0.00966324471) > 0.0001)
 //          if (std::abs(l0_value_scalar - 0.00220352481) > 0.0001)
           if (std::abs(l0_value_scalar - 0.000341659179) > 0.0001)
-            std::cout << "Wrong answer!" << std::endl;
+            std::cout << "Wrong answer!" << " " << l0_value_scalar << std::endl;
           else
             std::cout << "Right answer!" << std::endl;
 
@@ -142,10 +142,10 @@ int main(int _argc, char** _argv) {
       for (size_t t = 0; t < threadCount; ++t) threads[t].join();
 //    }
 
-//    for (size_t t = 1; t < threadCount; ++t)
+    for (size_t t = 1; t < threadCount; ++t)
 //      for (size_t i = 1; i < results[t].size(); ++i)
 //        if (abs(results[0][0] - results[t][0]) >= 0.0001)
-    if (abs(results[0][0] - results[1][0]) >= 0.0001)
+    if (abs(results[0][0] - results[t][0]) >= 0.0001)
       std::cerr << "Parallel test failed!" << std::endl;
     dumpCgs(cgs, i, 0, "e");
     dumpCgs(cgs, i, 1, "e");
