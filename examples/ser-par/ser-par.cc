@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <mutex>
+#include <cstring>
 #include <strstream>
 #include <thread>
 
@@ -26,9 +27,7 @@ void myDebugMem(const char* file, int line) {
 }
 
 int main(int _argc, char** _argv) {
-  // Guarantee that despite lack of debugMem statements there is a MemDebug
-  // object in memory.  The global one in mem_debug.cc seems to disappear.
-//  MemDebug myMemDebug;
+  MemDebug myMemDebug;
 
   myDebugMem(__FILE__, __LINE__);
 
@@ -51,11 +50,8 @@ int main(int _argc, char** _argv) {
 
   // This guarantees a memory leak which when displayed at program termination
   // verifies that leak detection is active.
-  char* kwa = (char*) malloc(4);
-  kwa[0] = 'H';
-  kwa[1] = 'i';
-  kwa[2] = '!';
-  kwa[3] = '\0';
+  char* leak = (char*) malloc(4);
+  strcpy(leak, "Hi!");
 
   const int layers = 2;
   const unsigned int inputDim = 1;
