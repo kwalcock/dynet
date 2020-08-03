@@ -111,7 +111,9 @@ void Node::autobatch_reshape_concatonly(const ComputationGraph & cg,
 }
 
 ComputationGraph::ComputationGraph() {
-  if(autobatch_flag) {
+  if (forward_only_flag) {
+    ee.reset(DBG_NEW ForwardOnlyExecutionEngine(*this));
+  } else if(autobatch_flag) {
     ee.reset(DBG_NEW BatchedExecutionEngine(*this));
   } else {
     ee.reset(DBG_NEW SimpleExecutionEngine(*this));

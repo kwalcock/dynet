@@ -39,7 +39,7 @@ class DynamicCPUMemoryPool : public BaseMemoryPool {
   std::mutex dynamicMutex;
 
  public:
-  explicit DynamicCPUMemoryPool(const std::string & name, size_t cap)
+  explicit DynamicCPUMemoryPool(const std::string & name)
     : BaseMemoryPool(name, new CPUAllocator()) {}
 
   ~DynamicCPUMemoryPool() {
@@ -50,6 +50,8 @@ class DynamicCPUMemoryPool : public BaseMemoryPool {
   void* allocate(size_t n); 
   void zero(void* p, size_t n); 
 
+  size_t round_up_align(size_t n) const { return a->round_up_align(n); }
+
   void myfree() {
     zero_allocated_memory(); // Do this first so that can't reuse memory.
     for (auto p : ptrs)
@@ -59,13 +61,9 @@ class DynamicCPUMemoryPool : public BaseMemoryPool {
   }
   // zeros out the amount of allocations
   void zero_allocated_memory() {
-    for (unsigned i = 0; i < ptrs.size(); i++)
+    for (size_t i = 0; i < ptrs.size(); i++)
       zero(ptrs[i], sizes[i]);
   }
-
- private:
-  void sys_alloc(size_t cap);
-  void zero_all() {}
 };
 
 class InternalMemoryPool : public BaseMemoryPool {

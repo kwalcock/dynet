@@ -159,6 +159,19 @@ DynetParams extract_dynet_params(int& argc,
       }
     }
 
+    // Forward only
+    else if (startswith(arg, "--dynet-forward-only") ||
+      startswith(arg, "--dynet_forward_only")) {
+      if (!has_arg(argi, argc, argv)) {
+        throw std::invalid_argument("[dynet] --dynet-forward-only expects an argument (0 for none 1 for on)");
+      }
+      else {
+        string a2 = get_arg(argi, argv);
+        istringstream c(a2); c >> params.forward_only;
+        remove_args(argc, argv, argi, 2);
+      }
+    }
+
 #if HAVE_CUDA
     else if (startswith(arg, "--dynet-gpus") ||
              startswith(arg, "--dynet_gpus")) {
@@ -263,7 +276,11 @@ void initialize(DynetParams& params) {
   if(params.autobatch)
     cerr << "[dynet] using autobatching" << endl;
   autobatch_flag = params.autobatch;
-  
+
+  if(params.forward_only)
+    cerr << "[dynet] using forward only" << endl;
+  forward_only_flag = params.forward_only;
+
   if(params.profiling)
     cerr << "[dynet] using profiling level " << params.profiling << endl;
   profiling_flag = params.profiling;

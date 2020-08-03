@@ -24,9 +24,6 @@ void* DynamicCPUMemoryPool::allocate(size_t n) {
   return res;
 }
 
-void DynamicCPUMemoryPool::sys_alloc(size_t cap) {}
-
-
 void* InternalMemoryPool::allocate(size_t n) {
   auto rounded_n = a->round_up_align(n);
   if (rounded_n + used > capacity) {
@@ -48,7 +45,7 @@ void InternalMemoryPool::sys_alloc(size_t cap) {
 AlignedMemoryPool::AlignedMemoryPool(const std::string &name, size_t initial_cap, MemAllocator *a, size_t expanding_unit, bool dynamic) : name(name), cap(initial_cap), current(0), a(a), expanding_unit(expanding_unit), dynamic(dynamic) {
   DYNET_ARG_CHECK(cap > 0, "Attempt to allocate memory of size 0 in AlignedMemoryPool");
   if (dynamic) {
-    pools.push_back(DBG_NEW DynamicCPUMemoryPool(name, cap));
+    pools.push_back(DBG_NEW DynamicCPUMemoryPool(name));
   } else {
     pools.push_back(DBG_NEW InternalMemoryPool(name, cap, a));
   }
@@ -65,7 +62,7 @@ void* AlignedMemoryPool::allocate(size_t n) {
     // round up to the nearest multiple of expanding_unit
     size_t new_pool_size  = (n + expanding_unit-1) / expanding_unit * expanding_unit;
     if (dynamic) {
-      pools.push_back(DBG_NEW DynamicCPUMemoryPool(name, new_pool_size));
+      pools.push_back(DBG_NEW DynamicCPUMemoryPool(name));
     } else {
       pools.push_back(DBG_NEW InternalMemoryPool(name, new_pool_size, a));
     }
@@ -83,7 +80,7 @@ void AlignedMemoryPool::myfree() {
     for (auto p : pools) { delete p; p = nullptr; }
     pools.clear();
     if (dynamic) {
-      pools.push_back(DBG_NEW DynamicCPUMemoryPool(name, cap));
+      pools.push_back(DBG_NEW DynamicCPUMemoryPool(name));
     } else {
       pools.push_back(DBG_NEW InternalMemoryPool(name, cap, a));
     }
