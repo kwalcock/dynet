@@ -541,9 +541,8 @@ const ParameterCollectionStorage& ParameterCollection::get_storage() const {
 const ParameterCollectionStorage& ParameterCollection::get_storage() const {
   ParameterCollection* mutableThis = (ParameterCollection*) this;
   ParameterCollectionStorage& mutableStorage = mutableThis->get_storage();
-  const ParameterCollectionStorage constStorage = const_cast<ParameterCollectionStorage&>(mutableStorage);
 
-  return constStorage;
+  return const_cast<ParameterCollectionStorage&>(mutableStorage);
 }
 
 void save_dynet_model(std::string filename, ParameterCollection* model) {

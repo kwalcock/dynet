@@ -9,6 +9,7 @@ namespace dynet {
 extern float default_weight_decay_lambda;
 extern int autobatch_flag;
 extern int profiling_flag;
+extern int forward_only_flag;
 
 /**
  * \brief Represents general parameters for dynet
@@ -22,6 +23,7 @@ struct DynetParams {
   float weight_decay; /**< Weight decay rate for L2 regularization */
   int autobatch; /**< Whether to autobatch or not */
   int profiling; /**< Whether to show autobatch debug info or not */
+  int forward_only; /**< Whether to support only inference, the forward pass */
   bool shared_parameters; /**< TO DOCUMENT */
   bool ngpus_requested; /**< GPUs requested by number */
   bool ids_requested; /**< GPUs requested by ids */
