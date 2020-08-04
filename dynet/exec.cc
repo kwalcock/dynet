@@ -35,12 +35,11 @@ vector<const Tensor*> ExecutionEngine::forward(
   return ret;
 }
 
-/******************/
-
 ForwardOnlyExecutionEngine::ForwardOnlyExecutionEngine(const ComputationGraph& cg) :
     ExecutionEngine(cg), num_nodes_evaluated(0) {
   pool_fxs   = nullptr; // because super does not initialize this
   pool_dEdfs = nullptr; // because super does not initialize this
+  // This is intentionally hardcoded to use the dynamic pool, even when it is not configured.
   memoryPool = DBG_NEW DynamicCPUMemoryPool("CPU forward memory");
 }
 
@@ -83,25 +82,10 @@ const Tensor& ForwardOnlyExecutionEngine::incremental_forward(VariableIndex i) {
   DYNET_ASSERT(i < cg.nodes.size(),
     "Out-of-bounds variable access in "
     "ForwardOnlyExecutionEngine::incremental_forward()");
-
-  // Free any old memory if this is a new CG.
   if (num_nodes_evaluated == 0)
-      memoryPool->myfree();
-
+      memoryPool->myfree(); // Free any old memory if this is a new CG.
   if (i >= num_nodes_evaluated) {
-    node_fxs.resize(i + 1); // Make room to hold all results.
-/*    void *begin = nullptr;
-    {
-      // Allocate enough memory to hold the output for rest of the nodes.
-      unsigned size = 0;
-      for (unsigned j = num_nodes_evaluated; j <= i; ++j) {
-        const Node* node = cg.nodes[j];
-        auto rounded_n = memoryPool->round_up_align(node->dim.size() * sizeof(float));
-        size += rounded_n;
-      }
-      begin = memoryPool->allocate(size); // Where does this end up?
-    } // is this my invention?
-*/
+    node_fxs.resize(i + 1); // Make room to hold all results and value-initialize new ones.
     vector<const Tensor*> xs(16);  // Container for arguments to nodes (reused).
     string current_node_name;  // Optionally used for debugging (reused).
     for (; num_nodes_evaluated <= i; ++num_nodes_evaluated) {
@@ -125,7 +109,7 @@ const Tensor& ForwardOnlyExecutionEngine::incremental_forward(VariableIndex i) {
       // Get the device
       DYNET_ASSERT(node->device != nullptr,
         "Attempt to access null device in "
-        "SimpleExecutionEngine::incremental_forward");
+        "ForwardOnlyExecutionEngine::incremental_forward");
       node_fx.device = node->device; // Where did this value come from?
       node_fx.mem_pool = DeviceMempool::NONE; // This is a hack!
       // If inplaced operation reuse (share) memory and don't call forward
@@ -136,6 +120,7 @@ const Tensor& ForwardOnlyExecutionEngine::incremental_forward(VariableIndex i) {
       }
       else {
         // Get the memory to store f(xs)
+        // size_t size = node->dim.size() * sizeof(float);
         node_fx.v = static_cast<float*>(
           memoryPool->allocate(node->dim.size() * sizeof(float)));
         if (node_fx.v == nullptr) {
@@ -147,7 +132,6 @@ const Tensor& ForwardOnlyExecutionEngine::incremental_forward(VariableIndex i) {
         // Compute f(xs) and store to node_fx.
         node->forward(xs, node_fx);
       }
-
       if (profiling_flag) { timer.stop(current_node_name); }
     }
   }
