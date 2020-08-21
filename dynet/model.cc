@@ -843,8 +843,31 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
   }
   Tensor scratch_t({(unsigned int)all_params.size()}, gradient_norm_scratch, &dev, DeviceMempool::NONE);
   Tensor sum_t({1}, gradient_norm_scratch + pi, &dev, DeviceMempool::NONE);
+
+  // Standard code
   t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum().sqrt();
-  return gradient_norm_scratch[pi];
+  float sqrt = gradient_norm_scratch[pi];
+
+  // Paranoid code
+  if (std::isnan(sqrt) || std::isinf(sqrt)) {
+    // The condition above should be very, very infrequent.
+    // Therefore capture/recalculate this intermediate value only when necessary.
+    t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum();
+    float sum = gradient_norm_scratch[pi];
+
+    cerr << "sqrt=" << sqrt << ", sum=" << sum;
+    for (size_t i = 0; i < all_params.size(); ++i) {
+      float value = gradient_norm_scratch[i];
+      if (std::isnan(value) || std::isinf(value) || value < 0)
+        cerr << ", " << i << "=" << value;
+    }
+    cerr << endl;
+
+    if (!std::isnan(sum) && !std::isinf(sum) && sum < 0)
+      return 0; // Try to do something about it.
+  }
+  // Standard code
+  return sqrt;
 }
 
 #ifdef __CUDACC__
