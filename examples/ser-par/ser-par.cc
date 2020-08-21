@@ -9,6 +9,7 @@
 #include <cstring>
 #include <strstream>
 #include <thread>
+#include <vector>
 
 
 std::string mkFilename(int index, int t, const char* id) {
@@ -18,7 +19,7 @@ std::string mkFilename(int index, int t, const char* id) {
   return string;
 }
 
-void dumpCgs(dynet::ComputationGraph** cgs, int index, int t, const char* id) {
+void dumpCgs(std::vector<dynet::ComputationGraph*>& cgs, int index, int t, const char* id) {
 //  cgs[t]->dump(mkFilename(index, t, id), true, true, false);
 }
 
@@ -31,7 +32,7 @@ int main(int _argc, char** _argv) {
 
   myDebugMem(__FILE__, __LINE__);
 
-  const int threadCount = 8;
+  const int threadCount = 36;
 
   std::cout << "Program started for " << threadCount << " threads!" << std::endl;
 
@@ -63,24 +64,29 @@ int main(int _argc, char** _argv) {
   dynet::VanillaLSTMBuilder protoLstmBuilder(layers, inputDim, hiddenDim, model);
   dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
 
-  for (int i = 0; i < 100; ++i)
+  for (int i = 0; i < 1000; ++i)
   {
     std::vector<std::vector<float>> results(threadCount);
     // This block assured that the variables below were destructed.
-//    {
+    {
       myDebugMem(__FILE__, __LINE__);
-      // This is usually done internally to a thread and not in duplicate like this.
-      // However, this way the cgs can be analyzed after the computation.
-      dynet::ComputationGraph cg0, cg1;
-      dynet::VanillaLSTMBuilder lstmBuilder0(protoLstmBuilder), lstmBuilder1(protoLstmBuilder);
-      dynet::LookupParameter lookupParameter0(protoLookupParameter), lookupParameter1(protoLookupParameter);
-      std::vector<dynet::Expression> losses0;
-      std::vector<dynet::Expression> losses1;
 
-      dynet::ComputationGraph* cgs[] = { &cg0, &cg1 };
-      dynet::VanillaLSTMBuilder* lstmBuilders[] = { &lstmBuilder0, &lstmBuilder1 };
-      dynet::LookupParameter* lookupParameters[] = { &lookupParameter0, &lookupParameter1 };
-      std::vector<dynet::Expression>* losseses[] = { &losses0, &losses1 };
+      std::vector<dynet::ComputationGraph*> cgs;
+      std::vector<dynet::VanillaLSTMBuilder*> lstmBuilders;
+      std::vector<dynet::LookupParameter*> lookupParameters;
+      std::vector<std::vector<dynet::Expression>*> losseses;
+
+      for (int i = 0; i < threadCount; i++) {
+        dynet::ComputationGraph* cg = new dynet::ComputationGraph();
+        dynet::VanillaLSTMBuilder* lstmBuilder = new dynet::VanillaLSTMBuilder(protoLstmBuilder);
+        dynet::LookupParameter* lookupParameter = new dynet::LookupParameter(protoLookupParameter);
+        std::vector<dynet::Expression>* losses = new std::vector<dynet::Expression>();
+
+        cgs.push_back(cg);
+        lstmBuilders.push_back(lstmBuilder);
+        lookupParameters.push_back(lookupParameter);
+        losseses.push_back(losses);
+      }
 
       std::vector<std::thread> threads(threadCount);
       for (size_t t = 0; t < threadCount; ++t) {
@@ -119,10 +125,14 @@ int main(int _argc, char** _argv) {
 
 //          if (std::abs(l0_value_scalar - 0.00966324471) > 0.0001)
 //          if (std::abs(l0_value_scalar - 0.00220352481) > 0.0001)
-          if (std::abs(l0_value_scalar - 0.000341659179) > 0.0001)
-            std::cout << "Wrong answer!" << " " << l0_value_scalar << std::endl;
-          else
-            std::cout << "Right answer!" << std::endl;
+
+          {
+            std::lock_guard<std::mutex> guard(coutMutex);
+            if (std::abs(l0_value_scalar - 0.000341659179) > 0.0001)
+              std::cout << "Wrong answer!" << " " << l0_value_scalar << std::endl;
+            else
+              std::cout << "Right answer!" << std::endl;
+          }
 
           results[t].push_back(l0_value_scalar);
           {
@@ -136,15 +146,22 @@ int main(int _argc, char** _argv) {
       }
 
       for (size_t t = 0; t < threadCount; ++t) threads[t].join();
-//    }
 
-    for (size_t t = 1; t < threadCount; ++t)
-//      for (size_t i = 1; i < results[t].size(); ++i)
-//        if (abs(results[0][0] - results[t][0]) >= 0.0001)
-    if (abs(results[0][0] - results[t][0]) >= 0.0001)
-      std::cerr << "Parallel test failed!" << std::endl;
-    dumpCgs(cgs, i, 0, "e");
-    dumpCgs(cgs, i, 1, "e");
+      for (int i = 0; i < threadCount; i++) {
+        delete cgs.back(); cgs.pop_back();
+        delete lstmBuilders.back(); lstmBuilders.pop_back();
+        delete lookupParameters.back(); lookupParameters.pop_back();
+        delete losseses.back(); losseses.pop_back();
+      }
+
+    }
+
+    for (size_t t = 0; t < threadCount; ++t)
+      for (size_t i = 0; i < results[t].size(); ++i)
+        if (abs(results[0][0] - results[t][i]) >= 0.0001)
+          std::cerr << "Parallel test failed!" << std::endl;
+//    dumpCgs(cgs, i, 0, "e");
+//    dumpCgs(cgs, i, 1, "e");
     std::cout << std::endl;
   }
 
