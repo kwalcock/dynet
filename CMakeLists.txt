@@ -106,6 +106,10 @@ else()
   else()
     set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O3 -march=native") # kwa: -O3 used to be -Ofast
   endif()
+  message("-- Optimization level: ${RELEASE_OPT_LEVEL}")
+
+  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -fno-omit-frame-pointer -fsanitize=leak")
+  set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O${RELEASE_OPT_LEVEL} -march=x86-64")
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}
