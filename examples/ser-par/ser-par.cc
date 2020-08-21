@@ -31,7 +31,7 @@ int main(int _argc, char** _argv) {
 
   myDebugMem(__FILE__, __LINE__);
 
-  const int threadCount = 2;
+  const int threadCount = 8;
 
   std::cout << "Program started for " << threadCount << " threads!" << std::endl;
 

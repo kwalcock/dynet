@@ -1,5 +1,6 @@
 #include "dynet/mem_debug.h"
 #include <iomanip>
+#include <fstream>
 
 #include "dynet/dynet.h"
 
