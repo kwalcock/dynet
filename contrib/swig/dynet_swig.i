@@ -112,7 +112,14 @@ VECTORCONSTRUCTOR(std::vector<dynet::Parameter>, ParameterVector, ParameterVecto
 // Convert C++ exceptions into Java exceptions. This provides
 // nice error messages for each listed exception, and a default
 // "unknown error" message for all others.
-%catches(std::invalid_argument, ...);
+%catches(
+  std::invalid_argument,
+  std::domain_error,
+  dynet::out_of_memory,
+  dynet::cuda_exception,
+  std::runtime_error,
+  ...
+);
 
 %pointer_functions(unsigned, uintp);
 %pointer_functions(int, intp);
