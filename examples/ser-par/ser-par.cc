@@ -18,7 +18,7 @@ std::string mkFilename(int index, int t, char* id) {
 }
 
 void dumpCgs(dynet::ComputationGraph** cgs, int index, int t, char* id) {
-  cgs[t]->dump(mkFilename(index, t, id), true, true, false);
+//  cgs[t]->dump(mkFilename(index, t, id), true, true, false);
 }
 
 void myDebugMem(char* file, int line) {
@@ -94,8 +94,11 @@ int main(int _argc, char** _argv) {
             std::lock_guard<std::mutex> guard(coutMutex);
             std::cout << "Thread " << t << " started!" << std::endl;
           }
+          if (t == 1) dumpCgs(cgs, i, 0, "a1-00"); // Does new_graph cause a problem? No.
           lstmBuilders[t]->new_graph(*cgs[t], false); // Do not update things
+          if (t == 1) dumpCgs(cgs, i, 0, "a1-0a"); // No problem caused.
           dumpCgs(cgs, i, t, "a");
+          if (t == 1) dumpCgs(cgs, i, 0, "a1-0b"); // A problem has been caused.
           std::vector<dynet::Expression> losses;
           for (size_t j = 0; j < inputDim; ++j) {
             lstmBuilders[t]->start_new_sequence();
@@ -103,14 +106,20 @@ int main(int _argc, char** _argv) {
               dynet::Expression x = dynet::lookup(*cgs[t], *lookupParameters[t], j * inputDim + k);
               lstmBuilders[t]->add_input(x);
             }
+            if (t == 1) dumpCgs(cgs, i, 0, "b1-0a");
             dumpCgs(cgs, i, t, "b");
+            if (t == 1) dumpCgs(cgs, i, 0, "b1-0b");
             losseses[t]->push_back(dynet::squared_norm(lstmBuilders[t]->final_h()[layers - 1]));
+            if (t == 1) dumpCgs(cgs, i, 0, "c1-0a");
             dumpCgs(cgs, i, t, "c");
+            if (t == 1) dumpCgs(cgs, i, 0, "c1-0b");
           }
 //          losses.push_back(losses[0] + losses[inputDim - 1]);
 
           auto l0_value_scalar = dynet::as_scalar((*losseses[t])[0].value());
+          if (t == 1) dumpCgs(cgs, i, 0, "d1-0a");
           dumpCgs(cgs, i, t, "d");
+          if (t == 1) dumpCgs(cgs, i, 0, "d1-0b");
 
 //          if (std::abs(l0_value_scalar - 0.00966324471) > 0.0001)
 //          if (std::abs(l0_value_scalar - 0.00220352481) > 0.0001)
@@ -124,6 +133,9 @@ int main(int _argc, char** _argv) {
             std::lock_guard<std::mutex> guard(coutMutex);
             std::cout << "Thread " << t << " finished!" << std::endl;
           }
+          if (t == 1) dumpCgs(cgs, i, 0, "d1-0a");
+          dumpCgs(cgs, i, t, "d1");
+          if (t == 1) dumpCgs(cgs, i, 0, "d1-0b");
 //        });
       }
 
