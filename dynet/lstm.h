@@ -195,6 +195,7 @@ struct VanillaLSTMBuilder : public RNNBuilder {
    * @brief Default Constructor
    */
   VanillaLSTMBuilder();
+  virtual ~VanillaLSTMBuilder();
   /**
    * \brief Constructor for the VanillaLSTMBuilder
    *
