@@ -1,6 +1,7 @@
 #include "dynet/mem_debug.h"
 
 #include <dynet/dynet.h>
+#include <dynet/io.h>
 #include <dynet/lstm.h>
 #include <dynet/tensor.h>
 
@@ -32,13 +33,17 @@ int main(int _argc, char** _argv) {
 
   myDebugMem(__FILE__, __LINE__);
 
+  unsigned int seed = 42; // For repeatability, this is used repeatedly.
   const int threadCount = 36;
+  const float expectedValue = 0.0313863866; // When reseeded.
 
   std::cout << "Program started for " << threadCount << " threads!" << std::endl;
+  std::string seedStr = std::to_string(seed);
+  const char* seedPtr = seedStr.c_str();
 
   const char* args[] = {
     "",
-    "--dynet-seed", "10",
+    "--dynet-seed", seedPtr,
     "--dynet-mem", "1",
     "--dynet-dynamic-mem", "1",
     "--dynet-forward-only", "1" // Does this imply the above?
@@ -61,10 +66,17 @@ int main(int _argc, char** _argv) {
   std::mutex coutMutex;
 
   dynet::ParameterCollection model; //  (0.0f); // no weight decay
-  dynet::VanillaLSTMBuilder protoLstmBuilder(layers, inputDim, hiddenDim, model);
   dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
+  for (int i = 0; i < hiddenDim; i++)
+    protoLookupParameter.initialize(i, { 14.5f - i });
+  dynet::reset_rng(seed);
+  dynet::VanillaLSTMBuilder protoLstmBuilder(layers, inputDim, hiddenDim, model);
 
-  for (int i = 0; i < 1000; ++i)
+  // Store this parameter collection for use elsewhere?
+  dynet::TextFileSaver textFileSaver("ser-par.rnn", false);
+  textFileSaver.save(model);
+
+  for (int i = 0; i < 20; ++i)
   {
     std::vector<std::vector<float>> results(threadCount);
     // This block assured that the variables below were destructed.
@@ -78,8 +90,8 @@ int main(int _argc, char** _argv) {
 
       for (int i = 0; i < threadCount; i++) {
         dynet::ComputationGraph* cg = new dynet::ComputationGraph();
-        dynet::VanillaLSTMBuilder* lstmBuilder = new dynet::VanillaLSTMBuilder(protoLstmBuilder);
         dynet::LookupParameter* lookupParameter = new dynet::LookupParameter(protoLookupParameter);
+        dynet::VanillaLSTMBuilder* lstmBuilder = new dynet::VanillaLSTMBuilder(protoLstmBuilder);
         std::vector<dynet::Expression>* losses = new std::vector<dynet::Expression>();
 
         cgs.push_back(cg);
@@ -128,7 +140,7 @@ int main(int _argc, char** _argv) {
 
           {
             std::lock_guard<std::mutex> guard(coutMutex);
-            if (std::abs(l0_value_scalar - 0.000341659179) > 0.0001)
+            if (std::abs(l0_value_scalar - expectedValue) > 0.0001)
               std::cout << "Wrong answer!" << " " << l0_value_scalar << std::endl;
             else
               std::cout << "Right answer!" << std::endl;
