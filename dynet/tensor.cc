@@ -6,6 +6,7 @@
 #include "dynet/except.h"
 #include "dynet/devices.h"
 
+#include <mutex>
 #include <random>
 #include <vector>
 #include <cstring>
@@ -279,7 +280,10 @@ void TensorTools::randomize_normal(Tensor& val, real mean, real stddev) {
   } else { throw std::runtime_error("Bad device type"); }
 }
 
+std::mutex randMutex;
+
 void TensorTools::randomize_uniform(Tensor& val, real left, real right) {
+  const std::lock_guard<std::mutex> randLock(randMutex);
   uniform_real_distribution<real> distribution(left, right);
   auto b = [&] {return distribution(*rndeng);};
   if (val.device->type == DeviceType::CPU) {
