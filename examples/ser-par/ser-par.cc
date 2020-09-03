@@ -12,7 +12,6 @@
 #include <thread>
 #include <vector>
 
-
 std::string mkFilename(int index, int t, const char* id) {
   std::strstream stream;
   stream << "cg_i" << index << "_t" << t << "_" << id << ".txt" << std::ends;
@@ -86,16 +85,13 @@ int main(int _argc, char** _argv) {
 
       std::vector<dynet::ComputationGraph*> cgs;
       std::vector<dynet::VanillaLSTMBuilder*> lstmBuilders;
-      std::vector<std::vector<dynet::Expression>*> losseses;
 
       for (int i = 0; i < threadCount; i++) {
         dynet::ComputationGraph* cg = new dynet::ComputationGraph();
         dynet::VanillaLSTMBuilder* lstmBuilder = new dynet::VanillaLSTMBuilder(protoLstmBuilder);
-        std::vector<dynet::Expression>* losses = new std::vector<dynet::Expression>();
 
         cgs.push_back(cg);
         lstmBuilders.push_back(lstmBuilder);
-        losseses.push_back(losses);
       }
 
       std::vector<std::thread> threads(threadCount);
@@ -121,20 +117,17 @@ int main(int _argc, char** _argv) {
 //            if (t == 1) dumpCgs(cgs, i, 0, "b1-0a");
             dumpCgs(cgs, i, t, "b");
 //            if (t == 1) dumpCgs(cgs, i, 0, "b1-0b");
-            losseses[t]->push_back(dynet::squared_norm(lstmBuilders[t]->final_h()[layers - 1]));
+            losses.push_back(dynet::squared_norm(lstmBuilders[t]->final_h()[layers - 1]));
 //            if (t == 1) dumpCgs(cgs, i, 0, "c1-0a");
             dumpCgs(cgs, i, t, "c");
 //            if (t == 1) dumpCgs(cgs, i, 0, "c1-0b");
           }
 //          losses.push_back(losses[0] + losses[inputDim - 1]);
 
-          auto l0_value_scalar = dynet::as_scalar((*losseses[t])[0].value());
+          auto l0_value_scalar = dynet::as_scalar(losses[0].value());
 //          if (t == 1) dumpCgs(cgs, i, 0, "d1-0a");
           dumpCgs(cgs, i, t, "d");
 //          if (t == 1) dumpCgs(cgs, i, 0, "d1-0b");
-
-//          if (std::abs(l0_value_scalar - 0.00966324471) > 0.0001)
-//          if (std::abs(l0_value_scalar - 0.00220352481) > 0.0001)
 
           {
             std::lock_guard<std::mutex> guard(coutMutex);
@@ -160,9 +153,7 @@ int main(int _argc, char** _argv) {
       for (int i = 0; i < threadCount; i++) {
         delete cgs.back(); cgs.pop_back();
         delete lstmBuilders.back(); lstmBuilders.pop_back();
-        delete losseses.back(); losseses.pop_back();
       }
-
     }
 
     for (size_t t = 0; t < threadCount; ++t)
