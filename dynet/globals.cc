@@ -14,6 +14,7 @@ float default_weight_decay_lambda;
 int autobatch_flag = 0;
 int profiling_flag = 0;
 int forward_only_flag = 0;
+int dynamic_mem_flag = 0;
 NamedTimer timer;
 
 }

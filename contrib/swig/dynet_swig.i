@@ -1239,7 +1239,9 @@ struct DynetParams {
   float weight_decay = 0; /**< Weight decay rate for L2 regularization */
   int autobatch = 0; /**< Whether to autobatch or not */
   int profiling = 0; /**< Whether to show profiling info or not */
+  int forward_only = 0; /**< Whether to account for forward passes only */
   bool shared_parameters = false; /**< TO DOCUMENT */
+  bool dynamic = false; /**< Whether to use dynamic memory allocation */
 
 #ifdef SWIG_USE_CUDA
   bool ngpus_requested = false; /**< GPUs requested by number */

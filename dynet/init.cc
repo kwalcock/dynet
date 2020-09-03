@@ -103,7 +103,7 @@ DynetParams extract_dynet_params(int& argc,
     // Memory
     else if (arg == "--dynet-dynamic-mem" || arg == "--dynet_dynamic_mem") {
       if ((argi + 1) >= argc) {
-        throw std::invalid_argument("[dynet] --dynet-dynemic-mem expects an argument (bool)");
+        throw std::invalid_argument("[dynet] --dynet-dynamic-mem expects an argument (bool)");
       } else {
         string a2 = argv[argi + 1];
         istringstream c(a2); c >> params.dynamic;
@@ -284,6 +284,10 @@ void initialize(DynetParams& params) {
   if(params.profiling)
     cerr << "[dynet] using profiling level " << params.profiling << endl;
   profiling_flag = params.profiling;
+
+  if(params.dynamic)
+    cerr << "[dynet] using dynamic memory" << endl;
+  dynamic_mem_flag = params.dynamic;
 
   // Allocate memory
   cerr << "[dynet] allocating memory: " << params.mem_descriptor << "MB\n";
