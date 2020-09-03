@@ -66,6 +66,7 @@ int main(int _argc, char** _argv) {
   std::mutex coutMutex;
 
   dynet::ParameterCollection model; //  (0.0f); // no weight decay
+  // This next one doesn't need to be copied.
   dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
   for (int i = 0; i < hiddenDim; i++)
     protoLookupParameter.initialize(i, { 14.5f - i });
@@ -85,18 +86,15 @@ int main(int _argc, char** _argv) {
 
       std::vector<dynet::ComputationGraph*> cgs;
       std::vector<dynet::VanillaLSTMBuilder*> lstmBuilders;
-      std::vector<dynet::LookupParameter*> lookupParameters;
       std::vector<std::vector<dynet::Expression>*> losseses;
 
       for (int i = 0; i < threadCount; i++) {
         dynet::ComputationGraph* cg = new dynet::ComputationGraph();
-        dynet::LookupParameter* lookupParameter = new dynet::LookupParameter(protoLookupParameter);
         dynet::VanillaLSTMBuilder* lstmBuilder = new dynet::VanillaLSTMBuilder(protoLstmBuilder);
         std::vector<dynet::Expression>* losses = new std::vector<dynet::Expression>();
 
         cgs.push_back(cg);
         lstmBuilders.push_back(lstmBuilder);
-        lookupParameters.push_back(lookupParameter);
         losseses.push_back(losses);
       }
 
@@ -117,7 +115,7 @@ int main(int _argc, char** _argv) {
           for (size_t j = 0; j < inputDim; ++j) {
             lstmBuilders[t]->start_new_sequence();
             for (size_t k = 0; k < inputDim; ++k) {
-              dynet::Expression x = dynet::lookup(*cgs[t], *lookupParameters[t], j * inputDim + k);
+              dynet::Expression x = dynet::lookup(*cgs[t], protoLookupParameter, j * inputDim + k);
               lstmBuilders[t]->add_input(x);
             }
 //            if (t == 1) dumpCgs(cgs, i, 0, "b1-0a");
@@ -162,7 +160,6 @@ int main(int _argc, char** _argv) {
       for (int i = 0; i < threadCount; i++) {
         delete cgs.back(); cgs.pop_back();
         delete lstmBuilders.back(); lstmBuilders.pop_back();
-        delete lookupParameters.back(); lookupParameters.pop_back();
         delete losseses.back(); losseses.pop_back();
       }
 
