@@ -882,6 +882,7 @@ struct AmsgradTrainer : public Trainer {
 ///////////////////////////////////
 
 %nodefaultctor RNNBuilder;
+%copyctor RNNBuilder;
 struct RNNBuilder {
   RNNPointer state() const;
   void new_graph(ComputationGraph& cg, bool update = true);
@@ -908,6 +909,7 @@ struct RNNBuilder {
   virtual ParameterCollection & get_parameter_collection() = 0;
 };
 
+%copyctor SimpleRNNBuilder;
 struct SimpleRNNBuilder : public RNNBuilder {
   SimpleRNNBuilder() = default;
 
@@ -936,6 +938,7 @@ struct SimpleRNNBuilder : public RNNBuilder {
 // declarations from dynet/lstm.h //
 ////////////////////////////////////
 
+%copyctor CoupledLSTMBuilder;
 struct CoupledLSTMBuilder : public RNNBuilder {
   CoupledLSTMBuilder() = default;
   explicit CoupledLSTMBuilder(unsigned layers,
@@ -987,6 +990,7 @@ struct CoupledLSTMBuilder : public RNNBuilder {
   float dropout_rate_h = 0.f, dropout_rate_c = 0.f;
 };
 
+%copyctor VanillaLSTMBuilder;
 struct VanillaLSTMBuilder : public RNNBuilder {
   VanillaLSTMBuilder() = default;
   explicit VanillaLSTMBuilder(unsigned layers,
