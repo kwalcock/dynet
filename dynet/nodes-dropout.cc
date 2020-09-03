@@ -164,7 +164,11 @@ size_t BlockDropout::aux_storage_size() const {
 template<class MyDevice>
 void BlockDropout::forward_dev_impl(const MyDevice & dev, const vector<const Tensor*>& xs, Tensor& fx) const {
   bernoulli_distribution distribution(1.0 - dropout_probability);
-  float block_multiplier = distribution(*rndeng)? 1.0 : 0.0;
+  float block_multiplier;
+  {
+    const std::lock_guard<std::mutex> rndengLock(rndengMutex);
+    block_multiplier = distribution(*rndeng) ? 1.0 : 0.0;
+  }
   block_multiplier =
     dropout_probability == 1.0? 0.0 : block_multiplier / (1.0 - dropout_probability);
   if (dropout_probability > 1.0 || dropout_probability < 0.0)

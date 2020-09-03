@@ -6,7 +6,6 @@
 #include "dynet/except.h"
 #include "dynet/devices.h"
 
-#include <mutex>
 #include <random>
 #include <vector>
 #include <cstring>
@@ -252,9 +251,10 @@ void TensorTools::identity(Tensor& val) {
 }
 
 void TensorTools::randomize_bernoulli(Tensor& val, real p, real scale) {
-  bernoulli_distribution distribution(p);
-  auto b = [&] {return distribution(*rndeng) * scale;};
   if (val.device->type == DeviceType::CPU) {
+    bernoulli_distribution distribution(p);
+    const std::lock_guard<std::mutex> rndengLock(rndengMutex);
+    auto b = [&] {return distribution(*rndeng) * scale; };
     generate(val.v, val.v + val.d.size(), b);
 #if HAVE_CUDA
   } else if (val.device->type == DeviceType::GPU) {
@@ -268,9 +268,10 @@ void TensorTools::randomize_bernoulli(Tensor& val, real p, real scale) {
 }
 
 void TensorTools::randomize_normal(Tensor& val, real mean, real stddev) {
-  normal_distribution<real> distribution(mean, stddev);
-  auto b = [&] {return distribution(*rndeng);};
   if (val.device->type == DeviceType::CPU) {
+    normal_distribution<real> distribution(mean, stddev);
+    const std::lock_guard<std::mutex> rndengdLock(rndengMutex);
+    auto b = [&] {return distribution(*rndeng); };
     generate(val.v, val.v + val.d.size(), b);
 #if HAVE_CUDA
   } else if (val.device->type == DeviceType::GPU) {
@@ -280,13 +281,11 @@ void TensorTools::randomize_normal(Tensor& val, real mean, real stddev) {
   } else { throw std::runtime_error("Bad device type"); }
 }
 
-std::mutex randMutex;
-
 void TensorTools::randomize_uniform(Tensor& val, real left, real right) {
-  const std::lock_guard<std::mutex> randLock(randMutex);
-  uniform_real_distribution<real> distribution(left, right);
-  auto b = [&] {return distribution(*rndeng);};
   if (val.device->type == DeviceType::CPU) {
+    uniform_real_distribution<real> distribution(left, right);
+    const std::lock_guard<std::mutex> rndengLock(rndengMutex);
+    auto b = [&] {return distribution(*rndeng); };
     generate(val.v, val.v + val.d.size(), b);
 #if HAVE_CUDA
   } else if (val.device->type == DeviceType::GPU) {
@@ -324,6 +323,7 @@ void TensorTools::randomize_orthonormal(Tensor& val, real scale) {
 
 real rand01() {
   uniform_real_distribution<real> distribution(0, 1);
+  const std::lock_guard<std::mutex> rndengLock(rndengMutex);
   return distribution(*rndeng);
 }
 
@@ -336,6 +336,7 @@ int rand0n(int n) {
 
 real rand_normal() {
   normal_distribution<real> distribution(0, 1);
+  const std::lock_guard<std::mutex> rndengLock(rndengMutex);
   return distribution(*rndeng);
 }
 

@@ -9,6 +9,7 @@
 namespace dynet {
 
 std::mt19937* rndeng = nullptr;
+std::mutex rndengMutex;
 Device* default_device = nullptr;
 float default_weight_decay_lambda;
 int autobatch_flag = 0;
