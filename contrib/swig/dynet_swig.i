@@ -1050,6 +1050,7 @@ struct VanillaLSTMBuilder : public RNNBuilder {
 
 typedef VanillaLSTMBuilder LSTMBuilder;
 
+%copyctor CompactVanillaLSTMBuilder;
 struct CompactVanillaLSTMBuilder : public RNNBuilder {
   CompactVanillaLSTMBuilder();
   explicit CompactVanillaLSTMBuilder(unsigned layers,
@@ -1105,6 +1106,7 @@ struct CompactVanillaLSTMBuilder : public RNNBuilder {
 // declarations from dynet/gru.h //
 ///////////////////////////////////
 
+%copyctor GRUBuilder;
 struct GRUBuilder : public RNNBuilder {
   GRUBuilder() = default;
   explicit GRUBuilder(unsigned layers,
@@ -1126,6 +1128,7 @@ struct GRUBuilder : public RNNBuilder {
 // declarations from dynet/fast-lstm.h //
 /////////////////////////////////////////
 
+%copyctor FastLSTMBuilder;
 struct FastLSTMBuilder : public RNNBuilder {
   FastLSTMBuilder() = default;
   explicit FastLSTMBuilder(unsigned layers,
@@ -1164,6 +1167,7 @@ struct FastLSTMBuilder : public RNNBuilder {
 /////////////////////////////////////////
 
 %nodefaultctor TreeLSTMBuilder;
+%copyctor TreeLSTMBuilder;
 struct TreeLSTMBuilder : public RNNBuilder {
   virtual void set_num_elements(int num) = 0;
   Expression add_input(int id, std::vector<int> children, const Expression& x);
@@ -1175,6 +1179,7 @@ struct TreeLSTMBuilder : public RNNBuilder {
  virtual void copy(const RNNBuilder & params) override;
 };
 
+%copyctor NaryTreeLSTMBuilder;
 struct NaryTreeLSTMBuilder : public TreeLSTMBuilder {
   explicit NaryTreeLSTMBuilder(unsigned N, //Max branching factor
                        unsigned layers,
@@ -1197,6 +1202,7 @@ struct NaryTreeLSTMBuilder : public TreeLSTMBuilder {
 
 };
 
+%copyctor UnidirectionalTreeLSTMBuilder;
 struct UnidirectionalTreeLSTMBuilder : public TreeLSTMBuilder {
   UnidirectionalTreeLSTMBuilder() = default;
   explicit UnidirectionalTreeLSTMBuilder(unsigned layers,
@@ -1213,7 +1219,7 @@ struct UnidirectionalTreeLSTMBuilder : public TreeLSTMBuilder {
   std::vector<Expression> h;
 };
 
-
+%copyctor BidirectionalTreeLSTMBuilder;
 struct BidirectionalTreeLSTMBuilder : public TreeLSTMBuilder {
   BidirectionalTreeLSTMBuilder() = default;
   explicit BidirectionalTreeLSTMBuilder(unsigned layers,
