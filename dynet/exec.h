@@ -28,10 +28,6 @@ class ExecutionEngine {
   virtual const Tensor& get_gradient(VariableIndex i) = 0;
   virtual void backward(bool full = false) = 0;
   virtual void backward(VariableIndex i, bool full = false) = 0;
-  AlignedMemoryPool* pool_fxs;
-  AlignedMemoryPool* pool_dEdfs;
-  MemAllocator* mem = nullptr;
-
  protected:
   explicit ExecutionEngine(const ComputationGraph& cg);
   DeviceManager* const device_manager;
@@ -66,10 +62,8 @@ private:
 
 class SimpleExecutionEngine : public ExecutionEngine {
  public:
-  explicit SimpleExecutionEngine(const ComputationGraph& cg);
-
-  ~SimpleExecutionEngine();
-  
+  explicit SimpleExecutionEngine(const ComputationGraph& cg) :
+    ExecutionEngine(cg), num_nodes_evaluated(0) {}
   void invalidate() override;
   void invalidate(unsigned i) override;
   const Tensor& forward() override;
