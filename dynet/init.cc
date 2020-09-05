@@ -22,16 +22,15 @@ using namespace std;
 namespace dynet {
 
 DynetParams::DynetParams() : random_seed(0), mem_descriptor("512"), weight_decay(0), autobatch(0), profiling(0),
-  shared_parameters(false), ngpus_requested(false), ids_requested(false), cpu_requested(false), requested_gpus(-1)
+  forward_only(0), shared_parameters(false), ngpus_requested(false), ids_requested(false), cpu_requested(false),
+  requested_gpus(-1), dynamic(false)
 {
 #if HAVE_CUDA
   gpu_mask = std::vector<int>(MAX_GPUS, 0);
 #endif
 }
 
-DynetParams::~DynetParams()
-{
-}
+DynetParams::~DynetParams() {}
 
 static bool has_arg(int argi, int argc, char** argv) {
   const std::string arg(argv[argi]);

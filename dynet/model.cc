@@ -96,9 +96,7 @@ ParameterStorage::ParameterStorage(const Dim& d, const ParameterInit & init,
   init.initialize_params(values);
 }
 
-ParameterStorage::~ParameterStorage() {
-  
-}
+ParameterStorage::~ParameterStorage() {}
 
 size_t ParameterStorage::size() const { return dim.size(); }
 
@@ -270,11 +268,6 @@ ParameterCollectionStorage::ParameterCollectionStorage(float weight_decay_lambda
 ParameterCollectionStorage::~ParameterCollectionStorage() {
   if (gradient_norm_scratch)
     device_manager->get_global_device("CPU")->mem->myfree(gradient_norm_scratch);
-
-  // Won't this be done automatically?
-  lookup_params.clear();
-  params.clear();
-  all_params.clear();
 }
 
 void ParameterCollectionStorage::project_weights(float radius) {
@@ -325,12 +318,7 @@ ParameterCollection ParameterCollection::add_subcollection(const string & sub_na
   }
 }
 
-ParameterCollection::~ParameterCollection() {
-  if (/*parent == nullptr &&*/ storage != nullptr) {
-//    delete storage;
-//    storage = nullptr;
-  }
-}
+ParameterCollection::~ParameterCollection() {}
 
 void ParameterCollection::set_weight_decay_lambda(float lambda) {
   get_storage().weight_decay.set_lambda(lambda);

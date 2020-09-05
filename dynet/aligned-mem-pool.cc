@@ -52,7 +52,7 @@ AlignedMemoryPool::AlignedMemoryPool(const std::string &name, size_t initial_cap
 }
 AlignedMemoryPool::~AlignedMemoryPool() {
   for (auto p : pools) { delete p; p = nullptr; }
-  pools.clear();
+  // pools.clear();
 }
 
 void* AlignedMemoryPool::allocate(size_t n) {

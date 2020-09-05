@@ -53,11 +53,12 @@ class DynamicCPUMemoryPool : public BaseMemoryPool {
   size_t round_up_align(size_t n) const { return a->round_up_align(n); }
 
   void myfree() {
-    zero_allocated_memory(); // Do this first so that can't reuse memory.
+    // Put some of these back in to help diagnose memory problems.
+    // zero_allocated_memory(); // Do this first so that can't reuse memory.
     for (auto p : ptrs)
       a->myfree(p);
-    ptrs.clear();
-    sizes.clear();
+    // ptrs.clear();
+    // sizes.clear();
   }
   // zeros out the amount of allocations
   void zero_allocated_memory() {

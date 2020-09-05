@@ -354,9 +354,7 @@ VanillaLSTMBuilder::VanillaLSTMBuilder(unsigned layers, unsigned input_dim, unsi
   dropout_rate_h = 0.f;
 }
 
-VanillaLSTMBuilder::~VanillaLSTMBuilder() {
-
-}
+VanillaLSTMBuilder::~VanillaLSTMBuilder() {}
 
 void VanillaLSTMBuilder::new_graph_impl(ComputationGraph& cg, bool update) {
   param_vars.clear();
