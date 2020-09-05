@@ -690,6 +690,12 @@ Expression weight_norm(const Expression& w, const Expression& g);
 /////////////////////////////////////
 
 %typemap(javacode) ComputationGraph %{
+  public synchronized void reset() {
+    delete();
+    // Make sure this is updated as well!
+    singletonInstance = null;
+  }
+
   // DyNet only allows one ComputationGraph at a time. This means that if you construct them
   // manually you have to remember to delete each one before you construct a new one, or your
   // program will crash. `getNew` will handle that deletion for you.
