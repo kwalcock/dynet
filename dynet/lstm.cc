@@ -312,15 +312,14 @@ void CoupledLSTMBuilder::disable_dropout() {
 enum { _X2I, _H2I, _BI, _X2F, _H2F, _BF, _X2O, _H2O, _BO, _X2G, _H2G, _BG };
 enum { LN_GH, LN_BH, LN_GX, LN_BX, LN_GC, LN_BC};
 
-
-
 VanillaLSTMBuilder::VanillaLSTMBuilder() : has_initial_state(false), layers(0), input_dim(0), hid(0), dropout_rate_h(0), ln_lstm(false), forget_bias(1.f), dropout_masks_valid(false), _cg(nullptr) { }
 
 VanillaLSTMBuilder::VanillaLSTMBuilder(unsigned layers, unsigned input_dim, unsigned hidden_dim,
   ParameterCollection& model, bool ln_lstm, float forget_bias) :
   // This is preventing crash on Windows.
   // This is in the correct place, before layers.
-  local_model(model.add_subcollection("vanilla-lstm-builder")), layers(layers), input_dim(input_dim), hid(hidden_dim), ln_lstm(ln_lstm), forget_bias(forget_bias),
+  local_model(model.add_subcollection("vanilla-lstm-builder")),
+  layers(layers), input_dim(input_dim), hid(hidden_dim), ln_lstm(ln_lstm), forget_bias(forget_bias),
   dropout_masks_valid(false) {
   unsigned layer_input_dim = input_dim;
   // When this parameter collection gets copied, the storage pointer gets copied
