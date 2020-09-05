@@ -16,7 +16,7 @@ enum { X2I, H2I, C2I, BI, X2O, H2O, C2O, BO, X2C, H2C, BC };
 CoupledLSTMBuilder::CoupledLSTMBuilder(unsigned layers,
                          unsigned input_dim,
                          unsigned hidden_dim,
-                         ParameterCollection& model) : layers(layers), input_dim(input_dim), hid(hidden_dim), dropout_masks_valid(false) {
+                         ParameterCollection& model) : layers(layers), input_dim(input_dim), hid(hidden_dim), dropout_masks_valid(false), _cg(nullptr) {
   unsigned layer_input_dim = input_dim;
   local_model = model.add_subcollection("lstm-builder");
   for (unsigned i = 0; i < layers; ++i) {
@@ -316,16 +316,20 @@ VanillaLSTMBuilder::VanillaLSTMBuilder() : has_initial_state(false), layers(0), 
 
 VanillaLSTMBuilder::VanillaLSTMBuilder(unsigned layers, unsigned input_dim, unsigned hidden_dim,
   ParameterCollection& model, bool ln_lstm, float forget_bias) :
-  // This is preventing crash on Windows.
-  // This is in the correct place, before layers.
+  // The initialization of local_model has been added here.
   local_model(model.add_subcollection("vanilla-lstm-builder")),
   layers(layers), input_dim(input_dim), hid(hidden_dim), ln_lstm(ln_lstm), forget_bias(forget_bias),
-  dropout_masks_valid(false) {
+  dropout_masks_valid(false), _cg(nullptr) {
   unsigned layer_input_dim = input_dim;
   // When this parameter collection gets copied, the storage pointer gets copied
   // with it.  Then, when one or the other local_model or model is deleted, it will
   // delete the storage pointer and the other one won't be able to use it.
-  //local_model = model.add_subcollection("vanilla-lstm-builder");
+  // For this reason, the local_model is initialized above so that the extra
+  // copy is not temporarily created and then shortly after assigned here.
+  // local_model = model.add_subcollection("vanilla-lstm-builder");
+  // The problem noted just above was solved by using in ParameterCollection a
+  // shared_ptr for ParameterCollectionStorage.  However, this local initialization
+  // is kept for performance reasons.  It can be used elsewhere, if tested.
   for (unsigned i = 0; i < layers; ++i) {
     // i
     Parameter p_x2i = local_model.add_parameters({hidden_dim * 4, layer_input_dim});
@@ -352,8 +356,6 @@ VanillaLSTMBuilder::VanillaLSTMBuilder(unsigned layers, unsigned input_dim, unsi
   dropout_rate = 0.f;
   dropout_rate_h = 0.f;
 }
-
-VanillaLSTMBuilder::~VanillaLSTMBuilder() {}
 
 void VanillaLSTMBuilder::new_graph_impl(ComputationGraph& cg, bool update) {
   param_vars.clear();
@@ -582,13 +584,13 @@ void VanillaLSTMBuilder::disable_dropout() {
 }
 
 
-CompactVanillaLSTMBuilder::CompactVanillaLSTMBuilder() : has_initial_state(false), layers(0), input_dim(0), hid(0), dropout_rate_h(0), weightnoise_std(0), dropout_masks_valid(false) { }
+CompactVanillaLSTMBuilder::CompactVanillaLSTMBuilder() : has_initial_state(false), layers(0), input_dim(0), hid(0), dropout_rate_h(0), weightnoise_std(0), dropout_masks_valid(false), _cg(nullptr) { }
 
 CompactVanillaLSTMBuilder::CompactVanillaLSTMBuilder(unsigned layers,
                  unsigned input_dim,
                  unsigned hidden_dim,
                  ParameterCollection& model)
-      : layers(layers), input_dim(input_dim), hid(hidden_dim), weightnoise_std(0), dropout_masks_valid(false){
+      : layers(layers), input_dim(input_dim), hid(hidden_dim), weightnoise_std(0), dropout_masks_valid(false), _cg(nullptr) {
   unsigned layer_input_dim = input_dim;
   local_model = model.add_subcollection("compact-vanilla-lstm-builder");
   for (unsigned i = 0; i < layers; ++i) {
