@@ -323,12 +323,9 @@ void initialize(int& argc, char**& argv, bool shared_parameters) {
 void cleanup() {
   if (default_device != nullptr) {
     auto device_manager = get_device_manager();
-
-    device_manager->clear();
-    default_device = nullptr;
-
     delete device_manager;
     device_manager = nullptr;
+    default_device = nullptr;
   }
   if (rndeng != nullptr) {
     delete rndeng;
