@@ -57,8 +57,10 @@ class DynamicCPUMemoryPool : public BaseMemoryPool {
     // zero_allocated_memory(); // Do this first so that can't reuse memory.
     for (auto p : ptrs)
       a->myfree(p);
-    // ptrs.clear();
-    // sizes.clear();
+    // If this was always called from the destructor, the following lines would not
+    // be necessary.  However, this method is also called independently!
+    ptrs.clear();
+    sizes.clear();
   }
   // zeros out the amount of allocations
   void zero_allocated_memory() {
