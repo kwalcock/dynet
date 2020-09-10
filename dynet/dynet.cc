@@ -125,7 +125,7 @@ ComputationGraph::ComputationGraph() {
   } else {
     ee.reset(DBG_NEW SimpleExecutionEngine(*this));
   }
-  if (!default_device->pools[0]->is_dynamic() && get_number_of_active_graphs() > 0) {
+  if (!default_device->pools[0]->is_dynamic() && n_hgs > 0) {
     cerr << "Memory allocator assumes only a single ComputationGraph at a time.\n";
     throw std::runtime_error("Attempted to create >1 CG");
   }
@@ -142,7 +142,7 @@ ComputationGraph::ComputationGraph(bool batched) {
   } else {
     ee.reset(DBG_NEW SimpleExecutionEngine(*this));
   }
-  if (!default_device->pools[0]->is_dynamic() && get_number_of_active_graphs() > 0) {
+  if (!default_device->pools[0]->is_dynamic() && n_hgs > 0) {
     cerr << "Memory allocator assumes only a single ComputationGraph at a time.\n";
     throw std::runtime_error("Attempted to create >1 CG");
   }
