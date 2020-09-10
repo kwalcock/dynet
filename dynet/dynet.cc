@@ -1,6 +1,8 @@
 #include "dynet/mem_debug.h"
-#include <iomanip>
+
+#include <atomic>
 #include <fstream>
+#include <iomanip>
 
 #include "dynet/dynet.h"
 
@@ -19,11 +21,15 @@ namespace dynet {
 float* kSCALAR_MINUSONE;
 float* kSCALAR_ONE;
 float* kSCALAR_ZERO;
-int n_hgs = 0;
-unsigned n_cumul_hgs = 0;
 
-int get_number_of_active_graphs() {return n_hgs;};
-unsigned get_current_graph_id() {return n_cumul_hgs;};
+// Limit access to this file and force others to use function.
+static std::atomic_int n_hgs(0);
+int get_number_of_active_graphs() {return n_hgs;}
+
+// Limit access to this file and force others to use function.
+static std::atomic_uint n_cumul_hgs(0);
+unsigned get_current_graph_id() {return n_cumul_hgs;}
+
 
 Node::~Node() {}
 size_t Node::aux_storage_size() const { return 0; }
@@ -119,7 +125,7 @@ ComputationGraph::ComputationGraph() {
   } else {
     ee.reset(DBG_NEW SimpleExecutionEngine(*this));
   }
-  if (!default_device->pools[0]->is_dynamic() && n_hgs > 0) {
+  if (!default_device->pools[0]->is_dynamic() && get_number_of_active_graphs() > 0) {
     cerr << "Memory allocator assumes only a single ComputationGraph at a time.\n";
     throw std::runtime_error("Attempted to create >1 CG");
   }
@@ -136,7 +142,7 @@ ComputationGraph::ComputationGraph(bool batched) {
   } else {
     ee.reset(DBG_NEW SimpleExecutionEngine(*this));
   }
-  if (!default_device->pools[0]->is_dynamic() && n_hgs > 0) {
+  if (!default_device->pools[0]->is_dynamic() && get_number_of_active_graphs() > 0) {
     cerr << "Memory allocator assumes only a single ComputationGraph at a time.\n";
     throw std::runtime_error("Attempted to create >1 CG");
   }
