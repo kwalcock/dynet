@@ -45,7 +45,7 @@ int main(int _argc, char** _argv) {
     "--dynet-seed", seedPtr,
     "--dynet-mem", "1",
     "--dynet-dynamic-mem", "1",
-    "--dynet-forward-only", "1" // Does this imply the above?
+    "--dynet-forward-only", "1"
   };
   char** argv = (char**) &args[0];
   int argc = 9;

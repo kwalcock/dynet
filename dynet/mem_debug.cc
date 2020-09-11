@@ -10,20 +10,20 @@ void debugMem(const char* file, int line) {
 #endif
 }
 
+#else
+
+void debugMem(const char* file, int line) {
+  // no-op
+}
+
 MemDebug::MemDebug() {
-#ifdef _MSC_VER
+#if defined(_DEBUG) && defined(_MSC_VER)
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 }
 
 MemDebug::~MemDebug() {
-//  debugMem(__FILE__, __LINE__);
-}
-
-#else
-
-void debugMem(const char* file, int line) {
-  // no-op
+  //  debugMem(__FILE__, __LINE__);
 }
 
 #endif
