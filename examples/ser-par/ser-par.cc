@@ -34,7 +34,8 @@ int main(int _argc, char** _argv) {
 
   unsigned int seed = 42; // For repeatability, this is used repeatedly.
   const int threadCount = 36;
-  const float expectedValue = 0.0313863866; // When reseeded.
+  const float evenExpectedValue = 0.0819774419; // When reseeded.
+  const float oddExpectedValue = 0.0907375515; // When reseeded.
 
   std::cout << "Program started for " << threadCount << " threads!" << std::endl;
   std::string seedStr = std::to_string(seed);
@@ -59,16 +60,19 @@ int main(int _argc, char** _argv) {
   strcpy(leak, "Hi!");
 
   const int layers = 2;
-  const unsigned int inputDim = 1;
+  const unsigned int inputDim = 3;
   const unsigned int hiddenDim = 10;
+  const unsigned int lookupLength = 12;
+  const unsigned int sequenceCount = 5;
+  const unsigned int sequenceLength = 4;
 
   std::mutex coutMutex;
 
   dynet::ParameterCollection model; //  (0.0f); // no weight decay
   // This next one doesn't need to be copied.
-  dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(hiddenDim, { inputDim });
-  for (int i = 0; i < hiddenDim; i++)
-    protoLookupParameter.initialize(i, { 14.5f - i });
+  dynet::LookupParameter protoLookupParameter = model.add_lookup_parameters(lookupLength, { inputDim });
+  for (int i = 0; i < lookupLength; i++)
+    protoLookupParameter.initialize(i, { 14.5f - i, 2.3f + i, -7.9f + 2.0f * i }); // inputDim here
   dynet::reset_rng(seed);
   dynet::VanillaLSTMBuilder protoLstmBuilder(layers, inputDim, hiddenDim, model);
 
@@ -76,7 +80,7 @@ int main(int _argc, char** _argv) {
   dynet::TextFileSaver textFileSaver("ser-par.rnn", false);
   textFileSaver.save(model);
 
-  for (int i = 0; i < 20; ++i)
+  for (int outerLoop = 0; outerLoop < 20; ++outerLoop)
   {
     std::vector<std::vector<float>> results(threadCount);
     // This block assured that the variables below were destructed.
@@ -102,49 +106,43 @@ int main(int _argc, char** _argv) {
             std::lock_guard<std::mutex> guard(coutMutex);
             std::cout << "Thread " << t << " started!" << std::endl;
           }
-//          if (t == 1) dumpCgs(cgs, i, 0, "a1-00"); // Does new_graph cause a problem? No.
-          lstmBuilders[t]->new_graph(*cgs[t], false); // Do not update things
-//          if (t == 1) dumpCgs(cgs, i, 0, "a1-0a"); // No problem caused.
-          dumpCgs(cgs, i, t, "a");
-//          if (t == 1) dumpCgs(cgs, i, 0, "a1-0b"); // A problem has been caused.
-          std::vector<dynet::Expression> losses;
-          for (size_t j = 0; j < inputDim; ++j) {
-            lstmBuilders[t]->start_new_sequence();
-            for (size_t k = 0; k < inputDim; ++k) {
-              dynet::Expression x = dynet::lookup(*cgs[t], protoLookupParameter, j * inputDim + k);
-              lstmBuilders[t]->add_input(x);
+          for (int innerLoop = 0; innerLoop < 10; ++innerLoop) {
+            lstmBuilders[t]->new_graph(*cgs[t], false); // Do not update things
+            std::vector<dynet::Expression> losses;
+            for (size_t j = 0; j < sequenceCount; ++j) {
+              lstmBuilders[t]->start_new_sequence();
+              for (size_t k = 0; k < sequenceLength; ++k) {
+                // Comparisons below are done for the first loss, which is for j = 0,
+                // so these indexes must be different even when j is 0.
+                int index = (innerLoop % 2 == 0) ? (5 * k + 2 * j) % lookupLength : (3 * k - 2 * j) % lookupLength;
+                dynet::Expression x = dynet::lookup(*cgs[t], protoLookupParameter, index);
+                lstmBuilders[t]->add_input(x);
+              }
+              losses.push_back(dynet::squared_norm(lstmBuilders[t]->final_h()[layers - 1]));
             }
-//            if (t == 1) dumpCgs(cgs, i, 0, "b1-0a");
-            dumpCgs(cgs, i, t, "b");
-//            if (t == 1) dumpCgs(cgs, i, 0, "b1-0b");
-            losses.push_back(dynet::squared_norm(lstmBuilders[t]->final_h()[layers - 1]));
-//            if (t == 1) dumpCgs(cgs, i, 0, "c1-0a");
-            dumpCgs(cgs, i, t, "c");
-//            if (t == 1) dumpCgs(cgs, i, 0, "c1-0b");
+
+            // Are all losses the same?
+            auto l0_value_scalar = dynet::as_scalar(losses[0].value());
+//            for (size_t index = 1; index < losses.size(); ++index) {
+//              auto newl0_value_scalar = dynet::as_scalar(losses[index].value());
+//              if (newl0_value_scalar != l0_value_scalar)
+//                std::cerr << "The value changed!";
+//            }
+
+            {
+              std::lock_guard<std::mutex> guard(coutMutex);
+              float expectedValue = (innerLoop % 2 == 0) ? evenExpectedValue : oddExpectedValue;
+              if (std::abs(l0_value_scalar - expectedValue) > 0.0001)
+                std::cout << "Wrong answer!" << " " << l0_value_scalar << std::endl;
+              else
+                std::cout << "Right answer!" << std::endl;
+            }
+            results[t].push_back(l0_value_scalar);
           }
-//          losses.push_back(losses[0] + losses[inputDim - 1]);
-
-          auto l0_value_scalar = dynet::as_scalar(losses[0].value());
-//          if (t == 1) dumpCgs(cgs, i, 0, "d1-0a");
-          dumpCgs(cgs, i, t, "d");
-//          if (t == 1) dumpCgs(cgs, i, 0, "d1-0b");
-
-          {
-            std::lock_guard<std::mutex> guard(coutMutex);
-            if (std::abs(l0_value_scalar - expectedValue) > 0.0001)
-              std::cout << "Wrong answer!" << " " << l0_value_scalar << std::endl;
-            else
-              std::cout << "Right answer!" << std::endl;
-          }
-
-          results[t].push_back(l0_value_scalar);
           {
             std::lock_guard<std::mutex> guard(coutMutex);
             std::cout << "Thread " << t << " finished!" << std::endl;
           }
-//          if (t == 1) dumpCgs(cgs, i, 0, "d1-0a");
-          dumpCgs(cgs, i, t, "d1");
-//          if (t == 1) dumpCgs(cgs, i, 0, "d1-0b");
         });
       }
 
@@ -156,12 +154,14 @@ int main(int _argc, char** _argv) {
       }
     }
 
-    for (size_t t = 0; t < threadCount; ++t)
-      for (size_t i = 0; i < results[t].size(); ++i)
+    for (size_t t = 0; t < threadCount; ++t) {
+      for (size_t i = 0; i < results[t].size(); i += 2)
         if (abs(results[0][0] - results[t][i]) >= 0.0001)
           std::cerr << "Parallel test failed!" << std::endl;
-//    dumpCgs(cgs, i, 0, "e");
-//    dumpCgs(cgs, i, 1, "e");
+      for (size_t i = 1; i < results[t].size(); i += 2)
+        if (abs(results[0][1] - results[t][i]) >= 0.0001)
+          std::cerr << "Parallel test failed!" << std::endl;
+    }
     std::cout << std::endl;
   }
 
