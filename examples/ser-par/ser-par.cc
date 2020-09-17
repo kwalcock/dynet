@@ -36,6 +36,7 @@ int main(int _argc, char** _argv) {
   const int threadCount = 36;
   const float evenExpectedValue = 0.0819774419; // When reseeded.
   const float oddExpectedValue = 0.0907375515; // When reseeded.
+  bool failed = false;
 
   std::cout << "Program started for " << threadCount << " threads!" << std::endl;
   std::string seedStr = std::to_string(seed);
@@ -132,8 +133,10 @@ int main(int _argc, char** _argv) {
             {
               std::lock_guard<std::mutex> guard(coutMutex);
               float expectedValue = (innerLoop % 2 == 0) ? evenExpectedValue : oddExpectedValue;
-              if (std::abs(l0_value_scalar - expectedValue) > 0.0001)
+              if (std::abs(l0_value_scalar - expectedValue) > 0.0001) {
                 std::cout << "Wrong answer!" << " " << l0_value_scalar << std::endl;
+                failed = true;
+              }
               else
                 std::cout << "Right answer!" << std::endl;
             }
@@ -156,11 +159,15 @@ int main(int _argc, char** _argv) {
 
     for (size_t t = 0; t < threadCount; ++t) {
       for (size_t i = 0; i < results[t].size(); i += 2)
-        if (abs(results[0][0] - results[t][i]) >= 0.0001)
+        if (abs(results[0][0] - results[t][i]) >= 0.0001) {
           std::cerr << "Parallel test failed!" << std::endl;
+          failed = true;
+        }
       for (size_t i = 1; i < results[t].size(); i += 2)
-        if (abs(results[0][1] - results[t][i]) >= 0.0001)
+        if (abs(results[0][1] - results[t][i]) >= 0.0001) {
           std::cerr << "Parallel test failed!" << std::endl;
+          failed = true;
+        }
     }
     std::cout << std::endl;
   }
@@ -168,5 +175,9 @@ int main(int _argc, char** _argv) {
   myDebugMem(__FILE__, __LINE__);
   dynet::cleanup();
   myDebugMem(__FILE__, __LINE__);
+  if (failed)
+    std::cerr << "Program failed!" << std::endl;
+  else
+    std::cerr << "Program passed!" << std::endl;
   std::cout << "Program finished!" << std::endl;
 }
