@@ -110,14 +110,14 @@ Device_GPU::Device_GPU(int my_id, const DeviceMempoolSizes & mbs,
   CUDA_CHECK(cudaMemcpyAsync(kSCALAR_ZERO, &zero, sizeof(float), cudaMemcpyHostToDevice));
 
   // Initialize the Eigen device
-  estream = new Eigen::CudaStreamDevice(device_id);
-  edevice = new Eigen::GpuDevice(estream);
+  estream = DBG_NEW Eigen::CudaStreamDevice(device_id);
+  edevice = DBG_NEW Eigen::GpuDevice(estream);
 
   // this is the big memory allocation.
-  pools[0] = new AlignedMemoryPool("GPU forward memory", (mbs.used[0] << 20), &gpu_mem);
-  pools[1] = new AlignedMemoryPool("GPU backward memory", (mbs.used[1] << 20), &gpu_mem);
-  pools[2] = new AlignedMemoryPool("GPU parameter memory", (mbs.used[2] << 20), &gpu_mem);
-  pools[3] = new AlignedMemoryPool("GPU scratch memory", (mbs.used[3] << 20), &gpu_mem);
+  pools[0] = DBG_NEW AlignedMemoryPool("GPU forward memory", (mbs.used[0] << 20), &gpu_mem);
+  pools[1] = DBG_NEW AlignedMemoryPool("GPU backward memory", (mbs.used[1] << 20), &gpu_mem);
+  pools[2] = DBG_NEW AlignedMemoryPool("GPU parameter memory", (mbs.used[2] << 20), &gpu_mem);
+  pools[3] = DBG_NEW AlignedMemoryPool("GPU scratch memory", (mbs.used[3] << 20), &gpu_mem);
 }
 
 Device_GPU::~Device_GPU() {}
@@ -130,28 +130,42 @@ void Device_GPU::reset_rng(unsigned seed) {
 }
 #endif
 
-Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared) :
-  Device(my_id, DeviceType::CPU, &cpu_mem), shmem(mem) {
-  if (shared) shmem = new SharedAllocator();
-  kSCALAR_MINUSONE = (float*) mem->malloc(sizeof(float));
+Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared, bool dynamic) :
+  Device(my_id, DeviceType::CPU, &cpu_mem), shmem(mem), shared(shared) {
+  if (shared) shmem = DBG_NEW SharedAllocator();
+  kSCALAR_MINUSONE = (float*) mem->mymalloc(sizeof(float));
   *kSCALAR_MINUSONE = -1;
-  kSCALAR_ONE = (float*) mem->malloc(sizeof(float));
+  kSCALAR_ONE = (float*) mem->mymalloc(sizeof(float));
   *kSCALAR_ONE = 1;
-  kSCALAR_ZERO = (float*) mem->malloc(sizeof(float));
+  kSCALAR_ZERO = (float*) mem->mymalloc(sizeof(float));
   *kSCALAR_ZERO = 0;
   name = "CPU";
 
   // Initialize the Eigen device
-  edevice = new Eigen::DefaultDevice;
+  edevice = DBG_NEW Eigen::DefaultDevice;
 
   // this is the big memory allocation.
-  pools[0] = new AlignedMemoryPool("CPU forward memory", (mbs.used[0] << 20), &cpu_mem);
-  pools[1] = new AlignedMemoryPool("CPU backward memory", (mbs.used[1] << 20), &cpu_mem);
-  pools[2] = new AlignedMemoryPool("CPU parameter memory", (mbs.used[2] << 20), shmem);
-  pools[3] = new AlignedMemoryPool("CPU scratch memory", (mbs.used[3] << 20), &cpu_mem);
+  const size_t initial = 1<<24;
+  pools[0] = DBG_NEW AlignedMemoryPool("CPU forward memory",   (mbs.used[0] << 20), &cpu_mem, initial, dynamic);
+  pools[1] = DBG_NEW AlignedMemoryPool("CPU backward memory",  (mbs.used[1] << 20), &cpu_mem, initial, dynamic);
+  pools[2] = DBG_NEW AlignedMemoryPool("CPU parameter memory", (mbs.used[2] << 20), shmem,    initial, dynamic);
+  pools[3] = DBG_NEW AlignedMemoryPool("CPU scratch memory",   (mbs.used[3] << 20), &cpu_mem, initial, dynamic);
 }
 
-Device_CPU::~Device_CPU() {}
+Device_CPU::~Device_CPU() {
+  delete pools[3];
+  delete pools[2];
+  delete pools[1];
+  delete pools[0];
+
+  delete edevice;
+
+  mem->myfree(kSCALAR_ZERO);
+  mem->myfree(kSCALAR_ONE);
+  mem->myfree(kSCALAR_MINUSONE);
+
+  if (shared) delete shmem;
+}
 
 
 DeviceManager::DeviceManager() {}
@@ -161,10 +175,9 @@ DeviceManager::~DeviceManager() {
 }
 
 void DeviceManager::clear() {
-  // TODO: Devices cannot be deleted at the moment because the destructor
-  // is protected
-  // for(Device* device : devices) delete device;
+  for (Device* device : devices) { delete device; device = nullptr; }
   devices.clear();
+  devices_map.clear();
 }
 
 void DeviceManager::add(Device* d) {
@@ -186,7 +199,7 @@ DeviceManager* get_device_manager() {
   // In C++11, initialization of function local static objects is
   // thread safe.
   // See https://isocpp.org/wiki/faq/ctors#static-init-order-on-first-use
-  static auto device_manager = new DeviceManager;
+  static auto device_manager = DBG_NEW DeviceManager;
   return device_manager;
 }
 

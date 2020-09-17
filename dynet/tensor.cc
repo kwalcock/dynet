@@ -1,4 +1,4 @@
-
+#include "dynet/mem_debug.h"
 #include "dynet/tensor.h"
 #include "dynet/tensor-eigen.h"
 #include "dynet/index-tensor.h"
@@ -239,7 +239,7 @@ void TensorTools::identity(Tensor& val) {
         val.v[pos++] = (i == j ? 1 : 0);
 #if HAVE_CUDA
   } else if (val.device->type == DeviceType::GPU) {
-    float* t = new float[val.d.size()];
+    float* t = DBG_NEW float[val.d.size()];
     for (size_t i = 0; i < val.d[0]; ++i)
       for (size_t j = 0; j < val.d[1]; ++j)
         t[pos++] = (i == j ? 1 : 0);
@@ -251,9 +251,10 @@ void TensorTools::identity(Tensor& val) {
 }
 
 void TensorTools::randomize_bernoulli(Tensor& val, real p, real scale) {
-  bernoulli_distribution distribution(p);
-  auto b = [&] {return distribution(*rndeng) * scale;};
   if (val.device->type == DeviceType::CPU) {
+    bernoulli_distribution distribution(p);
+    const std::lock_guard<std::mutex> rndengLock(rndengMutex);
+    auto b = [&] {return distribution(*rndeng) * scale; };
     generate(val.v, val.v + val.d.size(), b);
 #if HAVE_CUDA
   } else if (val.device->type == DeviceType::GPU) {
@@ -267,9 +268,10 @@ void TensorTools::randomize_bernoulli(Tensor& val, real p, real scale) {
 }
 
 void TensorTools::randomize_normal(Tensor& val, real mean, real stddev) {
-  normal_distribution<real> distribution(mean, stddev);
-  auto b = [&] {return distribution(*rndeng);};
   if (val.device->type == DeviceType::CPU) {
+    normal_distribution<real> distribution(mean, stddev);
+    const std::lock_guard<std::mutex> rndengdLock(rndengMutex);
+    auto b = [&] {return distribution(*rndeng); };
     generate(val.v, val.v + val.d.size(), b);
 #if HAVE_CUDA
   } else if (val.device->type == DeviceType::GPU) {
@@ -280,9 +282,10 @@ void TensorTools::randomize_normal(Tensor& val, real mean, real stddev) {
 }
 
 void TensorTools::randomize_uniform(Tensor& val, real left, real right) {
-  uniform_real_distribution<real> distribution(left, right);
-  auto b = [&] {return distribution(*rndeng);};
   if (val.device->type == DeviceType::CPU) {
+    uniform_real_distribution<real> distribution(left, right);
+    const std::lock_guard<std::mutex> rndengLock(rndengMutex);
+    auto b = [&] {return distribution(*rndeng); };
     generate(val.v, val.v + val.d.size(), b);
 #if HAVE_CUDA
   } else if (val.device->type == DeviceType::GPU) {
@@ -320,6 +323,7 @@ void TensorTools::randomize_orthonormal(Tensor& val, real scale) {
 
 real rand01() {
   uniform_real_distribution<real> distribution(0, 1);
+  const std::lock_guard<std::mutex> rndengLock(rndengMutex);
   return distribution(*rndeng);
 }
 
@@ -332,6 +336,7 @@ int rand0n(int n) {
 
 real rand_normal() {
   normal_distribution<real> distribution(0, 1);
+  const std::lock_guard<std::mutex> rndengLock(rndengMutex);
   return distribution(*rndeng);
 }
 
@@ -561,7 +566,7 @@ IndexTensor TensorTools::categorical_sample_log_prob_dev(const MyDevice & dev, c
   copy.v = static_cast<float*>(scratch_allocator->allocate(v.d.size() * sizeof(float)));
   TensorTools::randomize_uniform(copy);
   tb<3>(ids).device(*dev.edevice) = (tb<4>(v) - (-tb<4>(copy).log()).log()).argmax(dim);
-  scratch_allocator->free();
+  scratch_allocator->myfree();
   return ids;
 }
 #ifdef __CUDACC__

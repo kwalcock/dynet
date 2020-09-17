@@ -690,6 +690,12 @@ Expression weight_norm(const Expression& w, const Expression& g);
 /////////////////////////////////////
 
 %typemap(javacode) ComputationGraph %{
+  public synchronized void reset() {
+    delete();
+    // Make sure this is updated as well!
+    singletonInstance = null;
+  }
+
   // DyNet only allows one ComputationGraph at a time. This means that if you construct them
   // manually you have to remember to delete each one before you construct a new one, or your
   // program will crash. `getNew` will handle that deletion for you.
@@ -882,6 +888,7 @@ struct AmsgradTrainer : public Trainer {
 ///////////////////////////////////
 
 %nodefaultctor RNNBuilder;
+%copyctor RNNBuilder;
 struct RNNBuilder {
   RNNPointer state() const;
   void new_graph(ComputationGraph& cg, bool update = true);
@@ -908,6 +915,7 @@ struct RNNBuilder {
   virtual ParameterCollection & get_parameter_collection() = 0;
 };
 
+%copyctor SimpleRNNBuilder;
 struct SimpleRNNBuilder : public RNNBuilder {
   SimpleRNNBuilder() = default;
 
@@ -936,6 +944,7 @@ struct SimpleRNNBuilder : public RNNBuilder {
 // declarations from dynet/lstm.h //
 ////////////////////////////////////
 
+%copyctor CoupledLSTMBuilder;
 struct CoupledLSTMBuilder : public RNNBuilder {
   CoupledLSTMBuilder() = default;
   explicit CoupledLSTMBuilder(unsigned layers,
@@ -987,6 +996,7 @@ struct CoupledLSTMBuilder : public RNNBuilder {
   float dropout_rate_h = 0.f, dropout_rate_c = 0.f;
 };
 
+%copyctor VanillaLSTMBuilder;
 struct VanillaLSTMBuilder : public RNNBuilder {
   VanillaLSTMBuilder() = default;
   explicit VanillaLSTMBuilder(unsigned layers,
@@ -1046,6 +1056,7 @@ struct VanillaLSTMBuilder : public RNNBuilder {
 
 typedef VanillaLSTMBuilder LSTMBuilder;
 
+%copyctor CompactVanillaLSTMBuilder;
 struct CompactVanillaLSTMBuilder : public RNNBuilder {
   CompactVanillaLSTMBuilder();
   explicit CompactVanillaLSTMBuilder(unsigned layers,
@@ -1101,6 +1112,7 @@ struct CompactVanillaLSTMBuilder : public RNNBuilder {
 // declarations from dynet/gru.h //
 ///////////////////////////////////
 
+%copyctor GRUBuilder;
 struct GRUBuilder : public RNNBuilder {
   GRUBuilder() = default;
   explicit GRUBuilder(unsigned layers,
@@ -1122,6 +1134,7 @@ struct GRUBuilder : public RNNBuilder {
 // declarations from dynet/fast-lstm.h //
 /////////////////////////////////////////
 
+%copyctor FastLSTMBuilder;
 struct FastLSTMBuilder : public RNNBuilder {
   FastLSTMBuilder() = default;
   explicit FastLSTMBuilder(unsigned layers,
@@ -1160,6 +1173,7 @@ struct FastLSTMBuilder : public RNNBuilder {
 /////////////////////////////////////////
 
 %nodefaultctor TreeLSTMBuilder;
+%copyctor TreeLSTMBuilder;
 struct TreeLSTMBuilder : public RNNBuilder {
   virtual void set_num_elements(int num) = 0;
   Expression add_input(int id, std::vector<int> children, const Expression& x);
@@ -1171,6 +1185,7 @@ struct TreeLSTMBuilder : public RNNBuilder {
  virtual void copy(const RNNBuilder & params) override;
 };
 
+%copyctor NaryTreeLSTMBuilder;
 struct NaryTreeLSTMBuilder : public TreeLSTMBuilder {
   explicit NaryTreeLSTMBuilder(unsigned N, //Max branching factor
                        unsigned layers,
@@ -1193,6 +1208,7 @@ struct NaryTreeLSTMBuilder : public TreeLSTMBuilder {
 
 };
 
+%copyctor UnidirectionalTreeLSTMBuilder;
 struct UnidirectionalTreeLSTMBuilder : public TreeLSTMBuilder {
   UnidirectionalTreeLSTMBuilder() = default;
   explicit UnidirectionalTreeLSTMBuilder(unsigned layers,
@@ -1209,7 +1225,7 @@ struct UnidirectionalTreeLSTMBuilder : public TreeLSTMBuilder {
   std::vector<Expression> h;
 };
 
-
+%copyctor BidirectionalTreeLSTMBuilder;
 struct BidirectionalTreeLSTMBuilder : public TreeLSTMBuilder {
   BidirectionalTreeLSTMBuilder() = default;
   explicit BidirectionalTreeLSTMBuilder(unsigned layers,
@@ -1239,7 +1255,9 @@ struct DynetParams {
   float weight_decay = 0; /**< Weight decay rate for L2 regularization */
   int autobatch = 0; /**< Whether to autobatch or not */
   int profiling = 0; /**< Whether to show profiling info or not */
+  int forward_only = 0; /**< Whether to account for forward passes only */
   bool shared_parameters = false; /**< TO DOCUMENT */
+  bool dynamic = false; /**< Whether to use dynamic memory allocation */
 
 #ifdef SWIG_USE_CUDA
   bool ngpus_requested = false; /**< GPUs requested by number */

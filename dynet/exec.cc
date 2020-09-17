@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/exec.h"
 
 #include <unordered_map>
@@ -32,6 +33,132 @@ vector<const Tensor*> ExecutionEngine::forward(
     ret[i] = &(get_value(node_list[i]));
   }
   return ret;
+}
+
+ForwardOnlyExecutionEngine::ForwardOnlyExecutionEngine(const ComputationGraph& cg) :
+    ExecutionEngine(cg), num_nodes_evaluated(0) {
+  // This is intentionally hardcoded to use the dynamic pool, even when it is not configured.
+  memoryPool = DBG_NEW DynamicCPUMemoryPool("CPU forward memory");
+}
+
+ForwardOnlyExecutionEngine::~ForwardOnlyExecutionEngine() {
+  delete memoryPool;
+}
+
+void ForwardOnlyExecutionEngine::invalidate() {
+  num_nodes_evaluated = 0;
+}
+
+void ForwardOnlyExecutionEngine::invalidate(unsigned i) {
+  num_nodes_evaluated = i;
+}
+
+const Tensor& ForwardOnlyExecutionEngine::forward() {
+  const VariableIndex node_max_index = (VariableIndex)(cg.nodes.size() - 1);
+  return forward(node_max_index);
+}
+
+const Tensor& ForwardOnlyExecutionEngine::forward(VariableIndex i) {
+  invalidate();
+  return incremental_forward(i);
+}
+
+const Tensor& ForwardOnlyExecutionEngine::get_value(VariableIndex i) {
+  DYNET_ASSERT(i < cg.nodes.size(),
+    "Out-of-bounds variable access in ForwardOnlyExecutionEngine::get_value()");
+  if (i >= num_nodes_evaluated)
+    incremental_forward(i);
+  return node_fxs[i]; // Return whatever had been calculated before.
+}
+
+const Tensor& ForwardOnlyExecutionEngine::incremental_forward() {
+  const VariableIndex node_max_index = (VariableIndex)(cg.nodes.size() - 1);
+  return incremental_forward(node_max_index);
+}
+
+const Tensor& ForwardOnlyExecutionEngine::incremental_forward(VariableIndex i) {
+  DYNET_ASSERT(i < cg.nodes.size(),
+    "Out-of-bounds variable access in "
+    "ForwardOnlyExecutionEngine::incremental_forward()");
+  if (num_nodes_evaluated == 0)
+      memoryPool->myfree(); // Free any old memory if this is a new CG.
+  if (i >= num_nodes_evaluated) {
+    node_fxs.resize(i + 1); // Make room to hold all results and value-initialize new ones.
+    vector<const Tensor*> xs(16);  // Container for arguments to nodes (reused).
+    string current_node_name;  // Optionally used for debugging (reused).
+    for (; num_nodes_evaluated <= i; ++num_nodes_evaluated) {
+      const Node* node = cg.nodes[num_nodes_evaluated];
+      if (profiling_flag) {
+        current_node_name = "FWD " + node->as_dummy_string();
+        timer.start(current_node_name);
+      }
+      xs.resize(node->arity()); // same as node->args.size()
+      unsigned ai = 0;
+      for (VariableIndex arg: node->args) {
+        xs[ai] = &node_fxs[arg];
+        DYNET_ARG_CHECK(xs[ai]->device == node->device ||
+          node->supports_multidevice(),
+          "Attempt to do tensor forward in different devices (nodes " <<
+          arg << " and " << num_nodes_evaluated << ")");
+        ++ai;
+      }
+      auto& node_fx = node_fxs[num_nodes_evaluated];
+      node_fx.d = node->dim;
+      // Get the device
+      DYNET_ASSERT(node->device != nullptr,
+        "Attempt to access null device in "
+        "ForwardOnlyExecutionEngine::incremental_forward");
+      node_fx.device = node->device; // Where did this value come from?
+      node_fx.mem_pool = DeviceMempool::NONE; // This is a hack!
+      // If inplaced operation reuse (share) memory and don't call forward
+      if (node->forward_inplaced()) {
+        DYNET_ASSERT(node->args.size() == 1,
+          "Inplacing only supported for arity-1 nodes");
+        node_fx.v = node_fxs[node->args[0]].v;
+      }
+      else {
+        // Get the memory to store f(xs)
+        // size_t size = node->dim.size() * sizeof(float);
+        node_fx.v = static_cast<float*>(
+          memoryPool->allocate(node->dim.size() * sizeof(float)));
+        if (node_fx.v == nullptr) {
+          DYNET_RUNTIME_ERR("Ran out of memory when executing node " <<
+            num_nodes_evaluated << ", allocating FWD memory.");
+        }
+        // We are never doing the backward pass, so auxiliary memory
+        // should not be necessary.
+        // Compute f(xs) and store to node_fx.
+        node->forward(xs, node_fx);
+      }
+      if (profiling_flag) { timer.stop(current_node_name); }
+    }
+  }
+  // This will be the very last one by this point.
+  return node_fxs[i];
+}
+
+void ForwardOnlyExecutionEngine::not_implemented(char* method, char* file, int line) const {
+  DYNET_RUNTIME_ERR("The unimplemented method ForwardOnlyExecutionEngine::"
+    << method
+    << " in "
+    << file
+    << " at line "
+    << line
+    << " has been mistakenly called."
+  );
+}
+
+const Tensor& ForwardOnlyExecutionEngine::get_gradient(VariableIndex i) {
+  not_implemented("get_gradient(VariableIndex _)", __FILE__, __LINE__);
+  return forward(i); // It's a return value at least.
+}
+
+void ForwardOnlyExecutionEngine::backward(bool full) {
+  not_implemented("backward(bool _)", __FILE__, __LINE__);
+}
+
+void ForwardOnlyExecutionEngine::backward(VariableIndex from_where, bool full) {
+  not_implemented("backward(VariableIndex _, bool _)", __FILE__, __LINE__);
 }
 
 void SimpleExecutionEngine::invalidate() {
@@ -89,7 +216,7 @@ const Tensor& SimpleExecutionEngine::incremental_forward(VariableIndex i) {
   // free any old memory if this is a new CG
   if (num_nodes_evaluated == 0)
     for (Device* dev : device_manager->get_devices())
-      dev->pools[(int)DeviceMempool::FXS]->free();
+      dev->pools[(int)DeviceMempool::FXS]->myfree();
 
   if (i >= num_nodes_evaluated) {
     nfxs.resize(i + 1);
@@ -175,7 +302,7 @@ void SimpleExecutionEngine::backward(VariableIndex from_where, bool full) {
   ndEdfs.resize(num_nodes);
   const vector<Device*> &devices = device_manager->get_devices();
   for(Device* device : devices)
-    device->pools[(int)DeviceMempool::DEDFS]->free();
+    device->pools[(int)DeviceMempool::DEDFS]->myfree();
 
   // This loop allocates memory on the appropriate devices for the nodes whose
   // derivatives will be computed.
@@ -474,7 +601,7 @@ void BatchedExecutionEngine::garbage_collect() {
     }
   }
   for (Device* dev : device_manager->get_devices())
-    dev->pools[(int)DeviceMempool::FXS]->free();
+    dev->pools[(int)DeviceMempool::FXS]->myfree();
   batches.clear();
 }
 
@@ -847,7 +974,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
             // 2.a) the inputs need to be concatenated, but are already in the
             // right order within a contiguous block of memory.
             // TODO: make this work completely
-            Tensor* my_xsi = new Tensor;
+            Tensor* my_xsi = DBG_NEW Tensor;
             my_xsi->device = node->device;
             my_xsi->mem_pool = DeviceMempool::FXS;
 
@@ -954,7 +1081,7 @@ void BatchedExecutionEngine::backward(VariableIndex from_where, bool full) {
   vector<Tensor> batched_ndEdfs(num_batches);
   ndEdfs.resize(node2batch.size());
   for(Device* device : device_manager->get_devices())
-    device->pools[(int)DeviceMempool::DEDFS]->free();
+    device->pools[(int)DeviceMempool::DEDFS]->myfree();
   for (unsigned i = 0; i < num_batches; ++i) {
     const auto & my_batch = batches[i];
     const auto & dim = my_batch.nfx.d;

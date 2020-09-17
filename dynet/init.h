@@ -9,6 +9,8 @@ namespace dynet {
 extern float default_weight_decay_lambda;
 extern int autobatch_flag;
 extern int profiling_flag;
+extern int forward_only_flag;
+extern int dynamic_mem_flag;
 
 /**
  * \brief Represents general parameters for dynet
@@ -22,12 +24,14 @@ struct DynetParams {
   float weight_decay; /**< Weight decay rate for L2 regularization */
   int autobatch; /**< Whether to autobatch or not */
   int profiling; /**< Whether to show autobatch debug info or not */
+  int forward_only; /**< Whether to support only inference, the forward pass */
   bool shared_parameters; /**< TO DOCUMENT */
   bool ngpus_requested; /**< GPUs requested by number */
   bool ids_requested; /**< GPUs requested by ids */
   bool cpu_requested; /**< CPU requested in multi-device case */
   int requested_gpus; /**< Number of requested GPUs */
   std::vector<int> gpu_mask; /**< List of required GPUs by ids */
+  bool dynamic; /**< Dynamically allocate CPU memory for thread safety */
 };
 
 DynetParams extract_dynet_params(int& argc, char**& argv, bool shared_parameters = false);
