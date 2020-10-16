@@ -98,9 +98,9 @@ Device_GPU::Device_GPU(int my_id, const DeviceMempoolSizes & mbs,
 #if HAVE_CUDNN
   CUDNN_CHECK(cudnnCreate(&cudnnHandle));
 #endif
-  kSCALAR_MINUSONE = (float*)gpu_mem.malloc(sizeof(float));
-  kSCALAR_ONE = (float*)gpu_mem.malloc(sizeof(float));
-  kSCALAR_ZERO = (float*)gpu_mem.malloc(sizeof(float));
+  kSCALAR_MINUSONE = (float*)gpu_mem.mymalloc(sizeof(float));
+  kSCALAR_ONE = (float*)gpu_mem.mymalloc(sizeof(float));
+  kSCALAR_ZERO = (float*)gpu_mem.mymalloc(sizeof(float));
   name = "GPU:" + std::to_string(device_id);
   float minusone = -1;
   CUDA_CHECK(cudaMemcpyAsync(kSCALAR_MINUSONE, &minusone, sizeof(float), cudaMemcpyHostToDevice));
