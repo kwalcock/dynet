@@ -288,6 +288,9 @@ struct ComputationGraph {
   template <class Function>
   inline VariableIndex add_function(
       const std::initializer_list<VariableIndex>& arguments);
+  template <class Function>
+  inline VariableIndex add_function(Device *device,
+	  const std::initializer_list<VariableIndex>& arguments);
   /**
    * \brief Add a function to the computation graph (with side information)
    * \details This what is called when creating an expression
@@ -301,11 +304,20 @@ struct ComputationGraph {
   inline VariableIndex add_function(
       const std::initializer_list<VariableIndex>& arguments,
       Args&&... side_information);
+  template <class Function, typename... Args>
+  inline VariableIndex add_function(Device *device,
+	  const std::initializer_list<VariableIndex>& arguments,
+	  Args&&... side_information);
   template <class Function, typename T>
   inline VariableIndex add_function(const T& arguments);
+  template <class Function, typename T>
+  inline VariableIndex add_function(Device *device, const T& arguments);
   template <class Function, typename T, typename... Args>
   inline VariableIndex add_function(const T& arguments,
                                     Args&&... side_information);
+  template <class Function, typename T, typename... Args>
+  inline VariableIndex add_function(Device *device, const T& arguments,
+									Args&&... side_information);
 
   // reset ComputationGraph to a newly created state
   /**
@@ -466,11 +478,12 @@ struct ComputationGraph {
    * \brief Used for debugging
    */
   void print_graphviz() const;
+  void dump(const std::string& filename, bool show_values, bool show_gradients, bool nan_check_only);
 
   /**
    * \brief Get the unique graph ID
    * \details This ID is incremented by 1 each time a computation graph is
-   * created \return graph is
+   * created \return graph id
    */
   unsigned get_id() const { return graph_id; };
 
@@ -490,7 +503,7 @@ struct ComputationGraph {
   // flag of checking Inf/NaN of each layer. Only performing checking when
   // immediate_compute is also set to true.
   bool check_validity;
-  VariableIndex add_function_node(Node *node);
+  VariableIndex add_function_node(Node *node, Device *device = nullptr);
   void set_dim_for_new_node(const VariableIndex& i);
 
   std::vector<CGCheckpoint> checkpoints;
@@ -764,11 +777,15 @@ struct Node {
                             depending on your computation backend*/
   bool has_cuda_implemented = true;
 };
-
 template <class Function>
 inline VariableIndex ComputationGraph::add_function(
+	const std::initializer_list<VariableIndex>& arguments) {
+	return add_function_node(new Function(arguments));
+}
+template <class Function>
+inline VariableIndex ComputationGraph::add_function(Device *device,
     const std::initializer_list<VariableIndex>& arguments) {
-  return add_function_node(new Function(arguments));
+  return add_function_node(new Function(arguments), device);
 }
 
 // pass side information to the function. these are likely to be
@@ -777,13 +794,24 @@ template <class Function, typename... Args>
 inline VariableIndex ComputationGraph::add_function(
     const std::initializer_list<VariableIndex>& arguments,
     Args&&... side_information) {
-  return add_function_node(
-      new Function(arguments, std::forward<Args>(side_information)...));
+	return add_function_node(
+		new Function(arguments, std::forward<Args>(side_information)...));
+}
+template <class Function, typename... Args>
+inline VariableIndex ComputationGraph::add_function(Device *device,
+	const std::initializer_list<VariableIndex>& arguments,
+	Args&&... side_information) {
+	return add_function_node(
+		new Function(arguments, std::forward<Args>(side_information)...), device);
 }
 
 template <class Function, typename T>
 inline VariableIndex ComputationGraph::add_function(const T& arguments) {
   return add_function_node(new Function(arguments));
+}
+template <class Function, typename T>
+inline VariableIndex ComputationGraph::add_function(Device *device, const T& arguments) {
+	return add_function_node(new Function(arguments), device);
 }
 
 // pass side information to the function. these are likely to be
@@ -791,8 +819,16 @@ inline VariableIndex ComputationGraph::add_function(const T& arguments) {
 template <class Function, typename T, typename... Args>
 inline VariableIndex ComputationGraph::add_function(
     const T& arguments, Args&&... side_information) {
-  return add_function_node(
-      new Function(arguments, std::forward<Args>(side_information)...));
+	return add_function_node(
+		new Function(arguments, std::forward<Args>(side_information)...));
+}
+// pass side information to the function. these are likely to be
+// nondifferentiable arguments
+template <class Function, typename T, typename... Args>
+inline VariableIndex ComputationGraph::add_function(Device *device,
+	const T& arguments, Args&&... side_information) {
+	return add_function_node(
+		new Function(arguments, std::forward<Args>(side_information)...), device);
 }
 
 }  // namespace dynet

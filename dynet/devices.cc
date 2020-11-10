@@ -120,7 +120,12 @@ Device_GPU::Device_GPU(int my_id, const DeviceMempoolSizes & mbs,
   pools[3] = DBG_NEW AlignedMemoryPool("GPU scratch memory", (mbs.used[3] << 20), &gpu_mem);
 }
 
-Device_GPU::~Device_GPU() {}
+Device_GPU::~Device_GPU()
+{
+#if HAVE_CUDNN
+  CUDNN_CHECK(cudnnDestroy(cudnnHandle));
+#endif
+}
 
 void Device_GPU::reset_rng(unsigned seed) {
   CURAND_CHECK(curandCreateGenerator(&curandeng,
@@ -186,8 +191,12 @@ void DeviceManager::add(Device* d) {
 }
 
 Device* DeviceManager::get_global_device(const std::string & name) {
-  if (name == "")
+  if (name == "") {
+    if (!dynet::default_device) {
+      throw std::runtime_error("Default device does not exist");
+    }
     return dynet::default_device;
+  }
   auto it = devices_map.find(name);
   if (it == devices_map.end()) {
     throw std::runtime_error("Invalid device name: " + name);

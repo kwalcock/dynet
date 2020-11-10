@@ -105,7 +105,9 @@ void TextFileSaver::save(const LookupParameter & param,
 void TextFileSaver::save(const ParameterStorage & p,
                          const std::string & key) {
   datastream << "#Parameter# " << (key.size() > 0 ? key : p.name) << ' ' << p.dim << ' ';
-  // We additionally add a newline at the end of the line, so the total size is as below.
+  // A single float is "[+-]X.YYYe[+-]ZZZ " where the length of YYY is
+  // FLOAT32_PRECISION, and length of ZZZ is FLOAT32_EXPONENT. We additionally
+  // add a newline at the end of the line, so the total size is as below.
   size_t strsize = static_cast<size_t>(p.dim.size()) * FLOAT32_WIDTH + 1;
   bool zero_grad = grad_is_zero(p);
   if(zero_grad)

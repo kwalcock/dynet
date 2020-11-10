@@ -51,20 +51,20 @@ Expression const_lookup(ComputationGraph& g, LookupParameter p, unsigned index) 
 Expression const_lookup(ComputationGraph& g, LookupParameter p, const unsigned* pindex) { return Expression(&g, g.add_const_lookup(p, pindex)); }
 Expression const_lookup(ComputationGraph& g, LookupParameter p, const vector<unsigned>& indices) { return Expression(&g, g.add_const_lookup(p, indices)); }
 Expression const_lookup(ComputationGraph& g, LookupParameter p, const vector<unsigned>* pindices) { return Expression(&g, g.add_const_lookup(p, pindices)); }
-Expression zeros(ComputationGraph& g, const Dim& d) { return Expression(&g, g.add_function<Constant>(d, 0.f)); }
+Expression zeros(ComputationGraph& g, const Dim& d, Device *device) { return Expression(&g, g.add_function<Constant>(device, d, 0.f)); }
 // Expression zeroes(ComputationGraph& g, const Dim& d) {return zeros(g, d);}
-Expression ones(ComputationGraph& g, const Dim& d) { return Expression(&g, g.add_function<Constant>(d, 1.f)); }
-Expression constant(ComputationGraph& g, const Dim& d, float val) { return Expression(&g, g.add_function<Constant>(d, val)); }
-Expression random_normal(ComputationGraph& g, const Dim& d, float mean, float stddev) { return Expression(&g, g.add_function<RandomNormal>(d, mean, stddev)); }
-Expression random_bernoulli(ComputationGraph& g, const Dim& d, real p, real scale) { return Expression(&g, g.add_function<RandomBernoulli>({}, d, p, scale)); }
-Expression random_uniform(ComputationGraph& g, const Dim& d, real left, real right) { return Expression(&g, g.add_function<RandomUniform>({}, d, left, right)); }
-Expression random_gumbel(ComputationGraph& g, const Dim& d, real mu, real beta) { return Expression(&g, g.add_function<RandomGumbel>({}, d, mu, beta)); }
+Expression ones(ComputationGraph& g, const Dim& d, Device *device) { return Expression(&g, g.add_function<Constant>(device, d, 1.f)); }
+Expression constant(ComputationGraph& g, const Dim& d, float val, Device *device) { return Expression(&g, g.add_function<Constant>(device, d, val)); }
+Expression random_normal(ComputationGraph& g, const Dim& d, float mean, float stddev, Device *device) { return Expression(&g, g.add_function<RandomNormal>(device, d, mean, stddev)); }
+Expression random_bernoulli(ComputationGraph& g, const Dim& d, real p, real scale, Device *device) { return Expression(&g, g.add_function<RandomBernoulli>(device, {}, d, p, scale)); }
+Expression random_uniform(ComputationGraph& g, const Dim& d, real left, real right, Device *device) { return Expression(&g, g.add_function<RandomUniform>(device, {}, d, left, right)); }
+Expression random_gumbel(ComputationGraph& g, const Dim& d, real mu, real beta, Device *device) { return Expression(&g, g.add_function<RandomGumbel>(device, {}, d, mu, beta)); }
 
 Expression nobackprop(const Expression& x) { return Expression(x.pg, x.pg->add_function<NoBackprop>({x.i})); }
 Expression flip_gradient(const Expression& x) { return Expression(x.pg, x.pg->add_function<ScaleGradient>({x.i}, -1.f)); }
 Expression scale_gradient(const Expression& x, float lambd) { return Expression(x.pg, x.pg->add_function<ScaleGradient>({x.i}, lambd)); }
 
-Expression argmax(const Expression& x, ArgmaxGradient gradient_mode) { return Expression(x.pg, x.pg->add_function<Argmax>({x.i}, 0, (gradient_mode==straight_through_gradient))); }
+Expression argmax(const Expression& x, GradientMode gradient_mode) { return Expression(x.pg, x.pg->add_function<Argmax>({x.i}, 0, (gradient_mode==straight_through_gradient))); }
 
 Expression operator-(const Expression& x) { return Expression(x.pg, x.pg->add_function<Negate>({x.i})); }
 Expression operator+(const Expression& x, const Expression& y) { return Expression(x.pg, x.pg->add_function<CwiseSum>({x.i, y.i}));}
@@ -111,6 +111,11 @@ Expression rectify(const Expression& x) { return Expression(x.pg, x.pg->add_func
 Expression elu(const Expression& x, float alpha) { return Expression(x.pg, x.pg->add_function<ExponentialLinearUnit>({x.i}, 1.0, alpha)); }
 Expression selu(const Expression& x) { return Expression(x.pg, x.pg->add_function<ExponentialLinearUnit>({x.i}, 1.0507009873554804934193349852946, 1.6732632423543772848170429916717)); }
 Expression silu(const Expression& x, float beta) { return Expression(x.pg, x.pg->add_function<SigmoidLinearUnit>({x.i}, beta)); }
+
+Expression round(const Expression& x, GradientMode gradient_mode) { return Expression(x.pg, x.pg->add_function<Round>({x.i}, (gradient_mode==straight_through_gradient))); }
+Expression ceil(const Expression& x, GradientMode gradient_mode) { return Expression(x.pg, x.pg->add_function<Ceil>({x.i}, (gradient_mode==straight_through_gradient))); }
+Expression floor(const Expression& x, GradientMode gradient_mode) { return Expression(x.pg, x.pg->add_function<Floor>({x.i}, (gradient_mode==straight_through_gradient))); }
+
 Expression hinge(const Expression& x, unsigned index, float m) { return Expression(x.pg, x.pg->add_function<Hinge>({x.i}, index, m)); }
 Expression hinge(const Expression& x, const unsigned* pindex, float m) { return Expression(x.pg, x.pg->add_function<Hinge>({x.i}, pindex, m)); }
 Expression hinge(const Expression& x, const std::vector<unsigned> & indices, float m) { return Expression(x.pg, x.pg->add_function<Hinge>({x.i}, indices, m)); }
@@ -206,7 +211,7 @@ Expression pickneglogsoftmax(const Expression& x, const vector<unsigned> & v) { 
 Expression pickneglogsoftmax(const Expression& x, const unsigned* pv) { return Expression(x.pg, x.pg->add_function<PickNegLogSoftmax>({x.i}, pv)); }
 Expression pickneglogsoftmax(const Expression& x, const vector<unsigned> * pv) { return Expression(x.pg, x.pg->add_function<PickNegLogSoftmax>({x.i}, pv)); }
 
-Expression average_cols(const Expression& x) { return Expression(x.pg, x.pg->add_function<AverageColumns>({x.i})); }
+Expression average_cols(const Expression& x) { return Expression(x.pg, x.pg->add_function<MomentDimension>({x.i}, vector<unsigned>({1}), 1, false, 0)); }
 Expression sum_dim(const Expression& x, const vector<unsigned>& dims, bool b) { return Expression(x.pg, x.pg->add_function<SumDimension>({x.i}, dims, b)); }
 Expression sum_rows(const Expression& x) { return Expression(x.pg, x.pg->add_function<SumDimension>({x.i}, vector<unsigned>({0}), false)); }
 Expression sum_cols(const Expression& x) { return Expression(x.pg, x.pg->add_function<SumDimension>({x.i}, vector<unsigned>({1}), false)); }

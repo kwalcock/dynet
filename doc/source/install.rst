@@ -6,15 +6,14 @@ How to build DyNet and link it with your C++ programs.
 Prerequisites
 -------------
 
-DyNet relies on a number of external programs/libraries including CMake,
-Eigen, and Mercurial (to install Eigen). CMake, and Mercurial can
-be installed from standard repositories. 
+DyNet relies on a number of external programs/libraries including CMake
+and Eigen. CMake can be installed from standard repositories. 
 
 For example on **Ubuntu Linux**:
 
 ::
 
-    sudo apt-get install build-essential cmake mercurial
+    sudo apt-get install build-essential cmake
 
 Or on **macOS**, first make sure the Apple Command Line Tools are installed, then
 get CMake, and Mercurial with either homebrew or macports:
@@ -22,29 +21,23 @@ get CMake, and Mercurial with either homebrew or macports:
 ::
 
     xcode-select --install
-    brew install cmake hg  # Using homebrew.
-    sudo port install cmake mercurial # Using macports.
+    brew install cmake  # Using homebrew.
+    sudo port install cmake # Using macports.
 
 On **Windows**, see :ref:`windows-cpp-install`.
 
-To compile DyNet you also need the `development version of the Eigen
-library <https://bitbucket.org/eigen/eigen>`__. **If you use any of the
+To compile DyNet you also need a `specific version of the Eigen
+library <https://github.com/clab/dynet/releases/download/2.1/eigen-b2e267dc99d4.zip>`__. **If you use any of the
 released versions, you may get assertion failures or compile errors.**
-If you don't have Eigen already, you can get it easily using the
-following command:
+You can get it easily using the following command:
 
 ::
 
-    hg clone https://bitbucket.org/eigen/eigen/ -r b2e267d
+    mkdir eigen
+    cd eigen
+    wget https://github.com/clab/dynet/releases/download/2.1/eigen-b2e267dc99d4.zip
+    unzip eigen-b2e267dc99d4.zip
     
-The `-r NUM` specified a revision number that is known to work.  Adventurous
-users can remove it and use the very latest version, at the risk of the code
-breaking / not compiling. On macOS, you can install the latest development
-of Eigen using Homebrew:
-
-::
-
-    brew install --HEAD eigen
 
 Building
 --------
@@ -79,11 +72,29 @@ To see that things have built properly, you can run
 
 ::
 
-    ./examples/train_xor
+    ./examples/xor
 
 which will train a multilayer perceptron to predict the xor function.
 
 If any process here fails, please see :ref:`debugging-asking` for help.
+
+By default, Dynet will be compiled with the ``-Ofast`` optimization
+level which enables the ``-ffast-math`` option.  In most cases,
+this is be acceptable. However, it may impact mathematical computation outside
+the core of dynet, see `this issue <https://github.com/clab/dynet/issues/1433>`__.
+the ``RELEASE_OPT_LEVEL`` can be used to change the optimization level:
+
+::
+
+     cmake .. -DRELEASE_OPT_LEVEL=3 -DEIGEN3_INCLUDE_DIR=/path/to/eigen
+
+The ``CXXFLAGS`` environment variable can be used for more specific tunning,
+for example
+
+::
+    cmake -E env CXXFLAGS="-fno-math-errno" cmake .. -DRELEASE_OPT_LEVEL=3 -DEIGEN3_INCLUDE_DIR=/path/to/eigen
+
+Note that ``CXXFLAGS`` is only checked during the `first configuration <https://cmake.org/cmake/help/latest/envvar/CXXFLAGS.html>`__.
 
 Compiling/linking external programs
 -----------------------------------
@@ -232,7 +243,7 @@ in the generated solution**
 
 The Windows build also supports MKL and CUDA with the latest version of Eigen. If you build with 
 CUDA and/or cuDNN, ensure their respective DLLs are in your PATH environment variable when you use
-dynet (whether in native C++ or Python). For example:
+DyNet (whether in native C++ or Python). For example:
 
 ::
 
