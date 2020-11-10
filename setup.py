@@ -250,13 +250,15 @@ class build(_build):
                     # tfile.extractall('eigen')
                     log.info("Fetching Eigen...")
                     urlretrieve(EIGEN3_DOWNLOAD_URL, "eigen.zip")
+                except Exception as e:
+                    raise DistutilsSetupError("Could not download Eigen from %r: %s" % (EIGEN3_DOWNLOAD_URL, e))
+                try:
                     log.info("Unpacking Eigen...")
-                    EIGEN3_INCLUDE_DIR = os.path.join(BUILD_DIR, "eigen")
                     os.mkdir(EIGEN3_INCLUDE_DIR)
                     with zipfile.ZipFile("eigen.zip") as zfile:
                         zfile.extractall(EIGEN3_INCLUDE_DIR)
-                except:
-                    raise DistutilsSetupError("Could not download Eigen from %r" % EIGEN3_DOWNLOAD_URL)
+                except Exception as e:
+                    raise DistutilsSetupError("Could not extract Eigen to %r: %s" % (EIGEN3_INCLUDE_DIR, e))
 
             os.environ["CXX"] = CXX_PATH
             os.environ["CC"] = CC_PATH
@@ -346,9 +348,8 @@ class build_ext(_build_ext):
 
 
 try:
-    import pypandoc
-    long_description = pypandoc.convert("README.md", "rst")
-    long_description = "\n".join(line for line in long_description.splitlines() if "<#" not in line)
+    with open(os.path.join(SCRIPT_DIR, 'README.md'), encoding='utf-8') as f:
+        long_description = f.read()
 except:
     long_description = ""
 
@@ -358,6 +359,7 @@ setup(
     install_requires=["cython", "numpy"],
     description="The Dynamic Neural Network Toolkit",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
