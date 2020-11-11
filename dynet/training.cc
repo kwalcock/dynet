@@ -8,7 +8,7 @@
 #include "dynet/io.h"
 
 // same as in dynet/io.cc
-static const int FLOAT32_PRECISION = 8;
+// static const int FLOAT32_PRECISION = 8;
 
 // Macros for defining parameter update functions
 #ifdef __CUDACC__
