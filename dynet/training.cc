@@ -271,7 +271,7 @@ void Trainer::restart(real lr) {
 
 void Trainer::save(std::ostream& os)
 {
-    os.precision(FLOAT32_PRECISION);
+    os.precision(::FLOAT32_PRECISION);
     os << std::scientific << std::showpos;
     write_trainer_header(os, "#Trainer#", aux_allocated, aux_allocated_lookup);
     os
