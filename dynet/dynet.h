@@ -87,7 +87,6 @@ struct ComputationGraph {
    */
   ComputationGraph();
   ComputationGraph(bool batched);
-  void dump(const std::string& filename, bool show_values, bool show_gradients, bool nan_check_only);
   ~ComputationGraph();
 
   // INPUTS
