@@ -1,6 +1,7 @@
 #include "dynet/aligned-mem-pool.h"
 #include "dynet/devices.h"
 
+#include <iostream>
 #include <sstream>
 
 using namespace dynet;
@@ -18,8 +19,10 @@ void* InternalMemoryPool::allocate(size_t n) {
 void InternalMemoryPool::sys_alloc(size_t cap) {
   capacity = a->round_up_align(cap);
   mem = a->malloc(capacity);
-  if (mem == NULL)
+  if (mem == NULL) {
+    std::cerr << name << " failed to allocate " << capacity << std::endl;
     DYNET_RUNTIME_ERR(name << " failed to allocate " << capacity);
+  }
   used = 0;
 }
 

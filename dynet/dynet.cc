@@ -157,6 +157,9 @@ void ComputationGraph::clear() {
 }
 
 VariableIndex ComputationGraph::add_function_node(Node *node) {
+  if (node == nullptr)
+    cerr << "In ComputationGraph::add_function_node, node = " << node << endl;
+  cerr << "In ComputationGraph::add_function_node, nodes.size() = " << nodes.size() << endl;
   VariableIndex new_node_index((VariableIndex)nodes.size());
   nodes.push_back(node);
   if (node->device == nullptr) {
