@@ -144,13 +144,16 @@ ComputationGraph::ComputationGraph(bool batched) {
 }
 
 ComputationGraph::~ComputationGraph() {
+  cerr << "Computation graph is being destructed." << endl;
   this->clear();
   --n_hgs;
 }
 
 void ComputationGraph::clear() {
   parameter_nodes.clear();
+  cerr << "Nodes are being deleted." << endl;
   for (auto n : nodes) delete n;
+  cerr << "Nodes is being cleared." << endl;
   nodes.clear();
 
   ee->invalidate();
@@ -159,6 +162,7 @@ void ComputationGraph::clear() {
 VariableIndex ComputationGraph::add_function_node(Node *node) {
   if (node == nullptr)
     cerr << "In ComputationGraph::add_function_node, node = " << node << endl;
+  cerr << "In ComputationGraph::add_function_node, nodes = " << &nodes << endl;
   cerr << "In ComputationGraph::add_function_node, nodes.size() = " << nodes.size() << endl;
   VariableIndex new_node_index((VariableIndex)nodes.size());
   nodes.push_back(node);
