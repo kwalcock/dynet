@@ -163,7 +163,7 @@ VariableIndex ComputationGraph::add_function_node(Node *node) {
     cerr << "In ComputationGraph::add_function_node, node = " << node << endl;
   cerr << "In ComputationGraph::add_function_node, nodes = " << &nodes << endl;
   cerr << "In ComputationGraph::add_function_node, nodes.size() = " << nodes.size() << endl;
-  if (100000 < nodes.size())
+  if (1000000 == nodes.size())
     cin.get();
   VariableIndex new_node_index((VariableIndex)nodes.size());
   nodes.push_back(node);
@@ -380,7 +380,7 @@ VariableIndex ComputationGraph::add_const_lookup(LookupParameter p, const std::v
 // factory function should call this right after creating a new node object
 // to set its dimensions properly
 void ComputationGraph::set_dim_for_new_node(const VariableIndex& i) {
-  if (i < 0 || 100000 < i)
+  if (i < 0 || 1000000 == i)
     cin.get();
   Node* node = nodes[i];
   vector<Dim> xds(node->arity());
