@@ -155,7 +155,6 @@ void ComputationGraph::clear() {
   for (auto n : nodes) delete n;
   cerr << "Nodes is being cleared." << endl;
   nodes.clear();
-
   ee->invalidate();
 }
 
@@ -164,6 +163,8 @@ VariableIndex ComputationGraph::add_function_node(Node *node) {
     cerr << "In ComputationGraph::add_function_node, node = " << node << endl;
   cerr << "In ComputationGraph::add_function_node, nodes = " << &nodes << endl;
   cerr << "In ComputationGraph::add_function_node, nodes.size() = " << nodes.size() << endl;
+  if (nodes.size() > 100000)
+    cin.get();
   VariableIndex new_node_index((VariableIndex)nodes.size());
   nodes.push_back(node);
   if (node->device == nullptr) {
