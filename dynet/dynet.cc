@@ -380,6 +380,8 @@ VariableIndex ComputationGraph::add_const_lookup(LookupParameter p, const std::v
 // factory function should call this right after creating a new node object
 // to set its dimensions properly
 void ComputationGraph::set_dim_for_new_node(const VariableIndex& i) {
+  if (i % 10000 == 0)
+    cerr << "Keith was here" << endl;
   if (i < 0 || nodes.size() <= i) {
     cerr << "Bad index in ComputationGraph::set_dim_for_new_node = " << i << endl;
     cin.get();
