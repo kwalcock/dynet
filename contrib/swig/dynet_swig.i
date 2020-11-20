@@ -120,29 +120,43 @@ VECTORCONSTRUCTOR(std::vector<dynet::Parameter>, ParameterVector, ParameterVecto
 
 static void throwException(JNIEnv *jenv, const char* exceptionName, const char* functionName, const char* message) {
   std::ostringstream oss;
-  oss << "Exception " << exceptionName << " was thrown by DyNet in function " << functionName << ": " << message;
+  oss 
+    << "Exception " << exceptionName
+	<< " was thrown by DyNet and caught in function " << functionName 
+	<< " of file " << __FILE__
+	<< ": " << message;
   SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, oss.str().c_str());
 }
+
+static void throwException(JNIEnv *jenv, const char* exceptionName, const char* functionName, std::exception& exception) {
+  throwException(jenv, exceptionName, functionName, exception.what());
+}
+
+static const char* runtime_error_str = "std::runtime_error";
+static const char* logic_error_str = "std::logic_error";
+static const char* exception_str = "std::exception";
+static const char* unknown_str = "...";
+static const char* unknown_desc = "unknown exception";
+
 %}
 
 %exception {
-  const char* name = "$name";
+  static const char* name = "$wrapname [$name]";
 
   try {
 	$action
   }
   catch (std::runtime_error &e) {
-	throwException(jenv, "std::runtime_error", name, e.what());
+	throwException(jenv, runtime_error_str, name, e);
   }
   catch (std::logic_error &e) {
-	throwException(jenv, "std::logic_error", "$name", e.what());
+	throwException(jenv, logic_error_str, name, e);
   }
   catch (std::exception &e) {
-	throwException(jenv, "std::exception", "$name", e.what());
+	throwException(jenv, exception_str, name, e);
   }
   catch (...) {
-	throwException(jenv, "...", "$name", "unknown exception");
-	// If these should return, then what?
+	throwException(jenv, unknown_str, name, unknown_desc);
   }
 }
 
