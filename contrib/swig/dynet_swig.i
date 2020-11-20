@@ -112,7 +112,39 @@ VECTORCONSTRUCTOR(std::vector<dynet::Parameter>, ParameterVector, ParameterVecto
 // Convert C++ exceptions into Java exceptions. This provides
 // nice error messages for each listed exception, and a default
 // "unknown error" message for all others.
-%catches(std::invalid_argument, ...);
+//%catches(std::runtime_error, std::logic_error, std::exception, ...);
+
+%{
+#include <string>
+#include <sstream>
+
+static void throwException(JNIEnv *jenv, const char* exceptionName, const char* functionName, const char* message) {
+  std::ostringstream oss;
+  oss << "Exception " << exceptionName << " was thrown by DyNet in function " << functionName << ": " << message;
+  SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, oss.str().c_str());
+}
+%}
+
+%exception {
+  const char* name = "$name";
+
+  try {
+	$action
+  }
+  catch (std::runtime_error &e) {
+	throwException(jenv, "std::runtime_error", name, e.what());
+  }
+  catch (std::logic_error &e) {
+	throwException(jenv, "std::logic_error", "$name", e.what());
+  }
+  catch (std::exception &e) {
+	throwException(jenv, "std::exception", "$name", e.what());
+  }
+  catch (...) {
+	throwException(jenv, "...", "$name", "unknown exception");
+	// If these should return, then what?
+  }
+}
 
 %pointer_functions(unsigned, uintp);
 %pointer_functions(int, intp);
