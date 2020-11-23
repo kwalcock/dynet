@@ -117,6 +117,7 @@ VECTORCONSTRUCTOR(std::vector<dynet::Parameter>, ParameterVector, ParameterVecto
 %{
 #include <string>
 #include <sstream>
+#include <exception>
 
 static void throwException(JNIEnv *jenv, const char* exceptionName, const char* functionName, const char* message) {
   std::ostringstream oss;
@@ -158,6 +159,49 @@ static const char* unknown_desc = "unknown exception";
   catch (...) {
 	throwException(jenv, unknown_str, name, unknown_desc);
   }
+}
+
+%{
+
+namespace dynet {
+  void throwRuntimeError() {
+    throw std::runtime_error("This is a runtime error.");
+  }
+
+  void throwSubRuntimeError() {
+    throw std::overflow_error("This is an overflow error, a kind of runtime error");
+  }
+
+  void throwLogicError() {
+    throw std::logic_error("This is a logic error");
+  }
+
+  void throwSubLogicError() {
+    throw std::domain_error("This is a domain error, a kind of logic error.");
+  }
+
+  void throwException() {
+    throw std::logic_error("This is an exception");
+  }
+
+  void throwSubException() {
+    throw std::bad_cast();
+  }
+
+  void throwUnknown() {
+    throw 42;
+  }
+}
+%}
+
+namespace dynet {
+  void throwRuntimeError();
+  void throwSubRuntimeError();
+  void throwLogicError();
+  void throwSubLogicError();
+  void throwException();
+  void throwSubException();
+  void throwUnknown();
 }
 
 %pointer_functions(unsigned, uintp);
