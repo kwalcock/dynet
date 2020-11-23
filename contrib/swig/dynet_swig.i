@@ -169,11 +169,11 @@ namespace dynet {
   }
 
   void throwSubRuntimeError() {
-    throw std::overflow_error("This is an overflow error, a kind of runtime error");
+    throw std::overflow_error("This is an overflow error, a kind of runtime error.");
   }
 
   void throwLogicError() {
-    throw std::logic_error("This is a logic error");
+    throw std::logic_error("This is a logic error.");
   }
 
   void throwSubLogicError() {
@@ -181,7 +181,7 @@ namespace dynet {
   }
 
   void throwException() {
-    throw std::logic_error("This is an exception");
+    throw std::exception("This is an exception.");
   }
 
   void throwSubException() {
