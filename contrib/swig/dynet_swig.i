@@ -243,7 +243,7 @@ namespace dynet {
 }
 
 namespace dynet {
-  void setSignalHandler(int signal, SignalHandler* signalHandler);
+  void setSignalHandler(int signal, dynet::SignalHandler* signalHandler);
   void resetSignalHandler(int signal);
 }
 
