@@ -14,9 +14,9 @@ class SignalHandler {
 
 class SignalHandlerHolder {
  protected:
-  std::map<int, SignalHandler*> signalHandlers;
+  std::map<int, dynet::SignalHandler*> signalHandlers;
  public:
-  void set(int signal, SignalHandler* signalHandler);
+  void set(int signal, dynet::SignalHandler* signalHandler);
   void run(int signal);
   void reset(int signal);
   ~SignalHandlerHolder();
@@ -24,7 +24,7 @@ class SignalHandlerHolder {
   void del(int signal);
 };
 
-void setSignalHandler(int signal, SignalHandler* signalHandler);
+void setSignalHandler(int signal, dynet::SignalHandler* signalHandler);
 void resetSignalHandler(int signal);
 
 } // namespace dynet

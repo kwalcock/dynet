@@ -16,7 +16,7 @@ int SignalHandler::run(int signal) {
 
 void runSignalHandler(int signal);
 
-void SignalHandlerHolder::set(int signal, SignalHandler* signalHandler) {
+void SignalHandlerHolder::set(int signal, dynet::SignalHandler* signalHandler) {
   del(signal);
   signalHandlers[signal] = signalHandler;
   std::signal(signal, runSignalHandler);
@@ -33,23 +33,23 @@ void SignalHandlerHolder::reset(int signal) {
 SignalHandlerHolder::~SignalHandlerHolder() {
   for (const auto& keyValue : signalHandlers) {
     std::signal(keyValue.first, SIG_DFL);
-    delete keyValue.second;
+    // delete keyValue.second;
   }
   signalHandlers.clear();
 }
 
 void SignalHandlerHolder::del(int signal) {
-  std::signal(signal, SIG_DFL);
   std::map<int, SignalHandler*>::iterator signalHandlerItr = signalHandlers.find(signal);
   if (signalHandlerItr != signalHandlers.end()) {
+    std::signal(signal, SIG_DFL);
     signalHandlers.erase(signalHandlerItr);
-    delete signalHandlerItr->second;
+    // delete signalHandlerItr->second;
   }
 }
 
-SignalHandlerHolder signalHandlerHolder;
+dynet::SignalHandlerHolder signalHandlerHolder;
 
-void setSignalHandler(int signal, SignalHandler* signalHandler) {
+void setSignalHandler(int signal, dynet::SignalHandler* signalHandler) {
   signalHandlerHolder.set(signal, signalHandler);
 }
 
