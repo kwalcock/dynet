@@ -35,6 +35,7 @@ set(SWIG_JAVA_FILES
     "${CMAKE_SWIG_OUTDIR}/AmsgradTrainer.java"
     "${CMAKE_SWIG_OUTDIR}/BaseFileLoader.java"
     "${CMAKE_SWIG_OUTDIR}/BidirectionalTreeLSTMBuilder.java"
+    "${CMAKE_SWIG_OUTDIR}/Caller.java"
     "${CMAKE_SWIG_OUTDIR}/Callback.java"
     "${CMAKE_SWIG_OUTDIR}/ComputationGraph.java"
     "${CMAKE_SWIG_OUTDIR}/CoupledLSTMBuilder.java"
