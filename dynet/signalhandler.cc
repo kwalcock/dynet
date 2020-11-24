@@ -7,10 +7,10 @@ namespace dynet {
 
 SignalHandler::SignalHandler() { }
 
-SignalHandler::~SignalHandler() { }
+SignalHandler::~SignalHandler() { std::cout << "SignalHandler::~SignalHandler()" << std::endl; }
 
 int SignalHandler::run(int signal) {
-  std::cout << "Callback::run()" << std::endl;
+  std::cout << "SignalHandler::run()" << std::endl;
   return 0;
 }
 
