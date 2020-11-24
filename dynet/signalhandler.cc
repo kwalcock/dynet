@@ -14,7 +14,7 @@ int SignalHandler::run(int signal) {
   return 0;
 }
 
-void runSignalHandler(int signal);
+static void runSignalHandler(int signal);
 
 void SignalHandlerHolder::set(int signal, dynet::SignalHandler* signalHandler) {
   del(signal);
