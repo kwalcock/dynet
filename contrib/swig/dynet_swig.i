@@ -68,6 +68,7 @@
 #include "aligned-mem-pool.h"
 #include "devices.h"
 #include "callback.h"
+#include "signalhandler.h"
 %}
 
 //
@@ -224,21 +225,37 @@ namespace dynet {
 %feature("director") dynet::Callback;
 
 namespace dynet {
- class Callback {
-  public:
-   Callback();
-   virtual ~Callback();
-   virtual void run();
- };
+  class Callback {
+   public:
+    Callback();
+    virtual ~Callback();
+    virtual void run();
+  };
 
- class Caller {
-  public:
-   Caller();
-   ~Caller();
-   void delCallback();
-   void setCallback(Callback* cb);
-   void call();
- };
+  class Caller {
+   public:
+    Caller();
+    ~Caller();
+    void delCallback();
+    void setCallback(Callback* cb);
+    void call();
+  };
+}
+
+namespace dynet {
+  void setSignalHandler(int signal, SignalHandler* signalHandler);
+  void resetSignalHandler(int signal);
+}
+
+%feature("director") dynet::SignalHandler;
+
+namespace dynet {
+  class SignalHandler {
+   public:
+    SignalHandler();
+    virtual ~SignalHandler();
+    virtual int run(int signal);
+  };
 }
 
 %pointer_functions(unsigned, uintp);

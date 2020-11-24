@@ -84,6 +84,7 @@ set(SWIG_JAVA_FILES
     "${CMAKE_SWIG_OUTDIR}/RMSPropTrainer.java"
     "${CMAKE_SWIG_OUTDIR}/RNNBuilder.java"
     "${CMAKE_SWIG_OUTDIR}/Saver.java"
+    "${CMAKE_SWIG_OUTDIR}/SignalHandler.java"
     "${CMAKE_SWIG_OUTDIR}/SimpleRNNBuilder.java"
     "${CMAKE_SWIG_OUTDIR}/SimpleSGDTrainer.java"
     "${CMAKE_SWIG_OUTDIR}/StringVector.java"
