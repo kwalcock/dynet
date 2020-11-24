@@ -2,6 +2,7 @@
 # Sources:
 set(dynet_library_SRCS
     aligned-mem-pool.cc
+    callback.cc
     cfsm-builder.cc
     deep-lstm.cc
     devices.cc
@@ -74,6 +75,7 @@ endif()
 set(dynet_library_HDRS
 aligned-mem-pool.h
 c2w.h
+callback.h
 cfsm-builder.h
 cuda.h
 cudnn-ops.h

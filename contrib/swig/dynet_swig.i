@@ -67,6 +67,7 @@
 #include "mem.h"
 #include "aligned-mem-pool.h"
 #include "devices.h"
+#include "callback.h"
 %}
 
 //
@@ -118,6 +119,7 @@ VECTORCONSTRUCTOR(std::vector<dynet::Parameter>, ParameterVector, ParameterVecto
 #include <string>
 #include <sstream>
 #include <exception>
+#include <csignal>
 
 static void throwException(JNIEnv *jenv, const char* exceptionName, const char* functionName, const char* message) {
   std::ostringstream oss;
@@ -191,6 +193,18 @@ namespace dynet {
   void throwUnknown() {
     throw 42;
   }
+
+  void raiseSignal(int signal) {
+    std::raise(signal);
+  }
+
+  void readNullPtr() {
+	int result = *static_cast<int *>(nullptr);
+  }
+
+  void writeNullPtr() {
+	*static_cast<int *>(nullptr) = 42;
+  }
 }
 %}
 
@@ -202,6 +216,9 @@ namespace dynet {
   void throwException();
   void throwSubException();
   void throwUnknown();
+  void raiseSignal(int signal);
+  void readNullPtr();
+  void writeNullPtr();
 }
 
 %pointer_functions(unsigned, uintp);
@@ -486,6 +503,22 @@ class ParameterCollection {
 
   size_t parameter_count() const;
   size_t updated_parameter_count() const;
+};
+
+class Callback {
+ public:
+  Callback();
+  virtual ~Callback();
+  virtual void run();
+};
+
+class Caller {
+ public:
+  Caller();
+  ~Caller();
+  void delCallback();
+  void setCallback(int cb);
+  void call();
 };
 
 //////////////////////////////////////

@@ -6,6 +6,8 @@
 
 namespace dynet {
 
+extern "C" typedef void (*SignalHandler)(int signal);
+
 extern float default_weight_decay_lambda;
 extern int autobatch_flag;
 extern int profiling_flag;
