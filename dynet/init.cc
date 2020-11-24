@@ -33,33 +33,6 @@ DynetParams::~DynetParams()
 {
 }
 
-static int mapSignalHandler(SignalHandler signalHandler) {
-  if (signalHandler == SIG_ERR)
-    return -1;
-  else if (signalHandler == SIG_DFL)
-    return 1;
-  else if (signalHandler == SIG_IGN)
-    return 2;
-  else
-    return 0;
-}
-
-int setSignalHandler(int signal, SignalHandler newSignalHandler) {
-  return mapSignalHandler(std::signal(signal, newSignalHandler));
-}
-
-int resetSignalHandler(int signal) {
-  return mapSignalHandler(std::signal(signal, SIG_DFL));
-}
-
-extern "C" void sampleSignalHandler(int signal) {
-  std::cerr << "Caught signal " << signal;
-}
-
-void doSomething() {
-  setSignalHandler(5, &sampleSignalHandler);
-}
-
 static bool has_arg(int argi, int argc, char** argv) {
   const std::string arg(argv[argi]);
   auto pos = arg.find('=');
