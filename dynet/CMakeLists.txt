@@ -62,6 +62,7 @@ set(dynet_library_SRCS
     rnn.cc
     saxe-init.cc
     shadow-params.cc
+	signalhandler.cc
     tensor.cc
     training.cc
     treelstm.cc
@@ -150,6 +151,7 @@ rnn-state-machine.h
 saxe-init.h
 shadow-params.h
 sig.h
+signalhandler.h
 simd-functors.h
 str-util.h
 tensor-eigen.h

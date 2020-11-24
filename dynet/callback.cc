@@ -1,6 +1,5 @@
 #include "callback.h"
 
-#include <cstdio>
 #include <iostream>
 
 namespace dynet {

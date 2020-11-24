@@ -1,9 +1,6 @@
 #ifndef DYNET_CALLBACK_H
 #define DYNET_CALLBACK_H
 
-#include <cstdio>
-#include <iostream>
-
 namespace dynet {
 
 class Callback {
