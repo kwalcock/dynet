@@ -16,12 +16,12 @@ class Callback {
 
 class Caller {
  private:
-  int _callback;
+  Callback* _callback;
  public:
   Caller();
   ~Caller();
   void delCallback();
-  void setCallback(int cb);
+  void setCallback(Callback* cb);
   void call();
 };
 

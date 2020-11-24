@@ -11,14 +11,14 @@ namespace dynet {
 
   void Callback::run() { std::cout << "Callback::run()" << std::endl; }
 
-  Caller::Caller() : _callback(0) {} // nullptr) {}
+  Caller::Caller() : _callback(nullptr) {}
 
   Caller::~Caller() { delCallback(); }
 
-  void Caller::delCallback() { /*delete _callback;*/ _callback = 0; }
+  void Caller::delCallback() { delete _callback; _callback = nullptr; }
 
-  void Caller::setCallback(int cb) { delCallback(); _callback = cb; }
+  void Caller::setCallback(Callback* cb) { delCallback(); _callback = cb; }
 
-  void Caller::call() { /*if (_callback) _callback->run();*/ }
+  void Caller::call() { if (_callback) _callback->run(); }
 
 }

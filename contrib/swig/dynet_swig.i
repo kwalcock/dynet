@@ -1,4 +1,4 @@
-%module dynet_swig
+%module(directors="1") dynet_swig
 
 // This module provides java bindings for the dynet C++ code
 
@@ -219,6 +219,26 @@ namespace dynet {
   void raiseSignal(int signal);
   void readNullPtr();
   void writeNullPtr();
+}
+
+%feature("director") dynet::Callback;
+
+namespace dynet {
+ class Callback {
+  public:
+   Callback();
+   virtual ~Callback();
+   virtual void run();
+ };
+
+ class Caller {
+  public:
+   Caller();
+   ~Caller();
+   void delCallback();
+   void setCallback(Callback* cb);
+   void call();
+ };
 }
 
 %pointer_functions(unsigned, uintp);
@@ -503,22 +523,6 @@ class ParameterCollection {
 
   size_t parameter_count() const;
   size_t updated_parameter_count() const;
-};
-
-class Callback {
- public:
-  Callback();
-  virtual ~Callback();
-  virtual void run();
-};
-
-class Caller {
- public:
-  Caller();
-  ~Caller();
-  void delCallback();
-  void setCallback(int cb);
-  void call();
 };
 
 //////////////////////////////////////
