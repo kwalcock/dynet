@@ -184,7 +184,7 @@ namespace dynet {
   }
 
   void throwException() {
-    throw std::exception("This is an exception.");
+    throw std::exception();
   }
 
   void throwSubException() {
