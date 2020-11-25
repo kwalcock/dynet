@@ -258,6 +258,28 @@ namespace dynet {
   };
 }
 
+%{
+#include <csignal>
+#include <exception>
+
+static void throwSignalException(int signal) {
+  throw std::runtime_error("Signal handler was activated."); // signal_error
+}
+
+extern "C" {
+  static void runSignalHandler(int signal) {
+    throwSignalException(signal);
+  }
+}
+
+static int setSignalHandler() {
+  std::signal(SIGSEGV, runSignalHandler);
+  return 1;
+}
+
+//static int signalHandlerStatus = setSignalHandler();
+%}
+
 %pointer_functions(unsigned, uintp);
 %pointer_functions(int, intp);
 %pointer_functions(float, floatp);

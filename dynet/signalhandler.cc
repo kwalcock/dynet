@@ -14,7 +14,21 @@ int SignalHandler::run(int signal) {
   return 0;
 }
 
-static void runSignalHandler(int signal);
+dynet::SignalHandlerHolder signalHandlerHolder;
+
+static void throwSignalException(int signal) {
+  throw std::runtime_error("Signal handler was activated."); // signal_error
+}
+
+extern "C" {
+  static void runSignalHandler(int signal) {
+    signalHandlerHolder.run(signal);
+    // The run may not result in the same signal.  The handler is reapplied afterwards.
+    // This is to avoid recursive calls that might quickly get out of hand.
+    std::signal(signal, runSignalHandler);
+    throwSignalException(signal);
+  }
+}
 
 void SignalHandlerHolder::set(int signal, dynet::SignalHandler* signalHandler) {
   del(signal);
@@ -47,18 +61,12 @@ void SignalHandlerHolder::del(int signal) {
   }
 }
 
-dynet::SignalHandlerHolder signalHandlerHolder;
-
 void setSignalHandler(int signal, dynet::SignalHandler* signalHandler) {
   signalHandlerHolder.set(signal, signalHandler);
 }
 
 void resetSignalHandler(int signal) {
   signalHandlerHolder.reset(signal);
-}
-
-static void runSignalHandler(int signal) {
-  signalHandlerHolder.run(signal);
 }
 
 }
