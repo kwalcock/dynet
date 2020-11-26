@@ -51,6 +51,7 @@ extern Device* default_device;  // where parameters go by default
 
 class ExecutionEngine;
 struct ParameterNodeBase;
+struct ParameterNode;
 struct Node;
 struct Expression;
 
@@ -109,6 +110,9 @@ struct ComputationGraph {
    * \param device The device to place input value
    * \return The index of the created variable
    */
+
+  VariableIndex add_node(Node* node, Device* device);
+
   VariableIndex add_input(const real* ps,
                           Device* device);  // add pointer to scalar
   /**
@@ -164,6 +168,8 @@ struct ComputationGraph {
    * \param p Parameter to be added
    * \return The index of the created variable
    */
+  VariableIndex add_parameter_node(Node* node, Device* device);
+
   VariableIndex add_parameters(Parameter p);
   /**
    * \brief Add a full matrix of lookup parameters to the computation graph
