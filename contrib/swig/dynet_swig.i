@@ -121,6 +121,8 @@ VECTORCONSTRUCTOR(std::vector<dynet::Parameter>, ParameterVector, ParameterVecto
 
 %{
 
+#include <csignal>
+
 namespace dynet {
   void throwRuntimeError() {
     throw std::runtime_error("This is a runtime error.");
@@ -162,6 +164,7 @@ namespace dynet {
 	*static_cast<int *>(nullptr) = 42;
   }
 }
+
 %}
 
 namespace dynet {
