@@ -119,6 +119,64 @@ VECTORCONSTRUCTOR(std::vector<dynet::Parameter>, ParameterVector, ParameterVecto
   ...
 );
 
+%{
+
+namespace dynet {
+  void throwRuntimeError() {
+    throw std::runtime_error("This is a runtime error.");
+  }
+
+  void throwSubRuntimeError() {
+    throw std::overflow_error("This is an overflow error, a kind of runtime error.");
+  }
+
+  void throwLogicError() {
+    throw std::logic_error("This is a logic error.");
+  }
+
+  void throwSubLogicError() {
+    throw std::domain_error("This is a domain error, a kind of logic error.");
+  }
+
+  void throwException() {
+    throw std::exception();
+  }
+
+  void throwSubException() {
+    throw std::bad_cast();
+  }
+
+  void throwUnknown() {
+    throw 42;
+  }
+
+  void raiseSignal(int signal) {
+    std::raise(signal);
+  }
+
+  void readNullPtr() {
+	int result = *static_cast<int *>(nullptr);
+  }
+
+  void writeNullPtr() {
+	*static_cast<int *>(nullptr) = 42;
+  }
+}
+%}
+
+namespace dynet {
+  void throwRuntimeError();
+  void throwSubRuntimeError();
+  void throwLogicError();
+  void throwSubLogicError();
+  void throwException();
+  void throwSubException();
+  void throwUnknown();
+  void raiseSignal(int signal);
+  void readNullPtr();
+  void writeNullPtr();
+}
+
 %pointer_functions(unsigned, uintp);
 %pointer_functions(int, intp);
 %pointer_functions(float, floatp);
