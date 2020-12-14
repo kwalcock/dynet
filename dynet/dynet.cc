@@ -1,27 +1,58 @@
 #include <iomanip>
+#include <mutex>
 
-#include "dynet/dynet.h"
-
-#include "dynet/exec.h"
-#include "dynet/param-nodes.h"
 #include "dynet/aligned-mem-pool.h"
-#include "dynet/dynet-helper.h"
-#include "dynet/expr.h"
 #include "dynet/devices.h"
+#include "dynet/dynet.h"
+#include "dynet/dynet-helper.h"
+#include "dynet/exec.h"
+#include "dynet/expr.h"
+#include "dynet/param-nodes.h"
 #include "dynet/timing.h"
-
-using namespace std;
 
 namespace dynet {
 
 float* kSCALAR_MINUSONE;
 float* kSCALAR_ONE;
 float* kSCALAR_ZERO;
-int n_hgs = 0;
-unsigned n_cumul_hgs = 0;
 
-int get_number_of_active_graphs() {return n_hgs;};
-unsigned get_current_graph_id() {return n_cumul_hgs;};
+class CgTracker {
+ protected:
+  int n_hgs = 0;
+  unsigned n_cumul_hgs = 0;
+
+ public:
+  int get_active_count() {
+    return n_hgs;
+  }
+
+  unsigned inc_active_count() {
+    n_hgs++;
+    n_cumul_hgs++;
+    return n_cumul_hgs;
+  }
+
+  void dec_active_count() {
+    n_hgs--;
+  }
+
+  unsigned get_cumulative_count() {
+    return n_cumul_hgs;
+  }
+};
+
+CgTracker cgTracker;
+std::mutex cgTrackerMutex;
+
+int get_number_of_active_graphs() {
+  std::lock_guard<std::mutex> guard(cgTrackerMutex);
+  return cgTracker.get_active_count();
+};
+
+unsigned get_current_graph_id() {
+  std::lock_guard<std::mutex> guard(cgTrackerMutex);
+  return cgTracker.get_cumulative_count();
+};
 
 Node::~Node() {}
 size_t Node::aux_storage_size() const { return 0; }
@@ -109,43 +140,38 @@ void Node::autobatch_reshape_concatonly(const ComputationGraph & cg,
   }
 }
 
-ComputationGraph::ComputationGraph() {
-  if(autobatch_flag) {
-    ee.reset(new BatchedExecutionEngine(*this));
-  } else {
-    ee.reset(new SimpleExecutionEngine(*this));
-  }
-  if (n_hgs > 0) {
-    cerr << "Memory allocator assumes only a single ComputationGraph at a time.\n";
-    throw std::runtime_error("Attempted to create >1 CG");
-  }
-  ++n_hgs;
-  immediate_compute = false;
-  check_validity = false;
-  ++n_cumul_hgs;
-  graph_id = n_cumul_hgs;
-}
+ComputationGraph::ComputationGraph() : ComputationGraph(autobatch_flag) { }
 
 ComputationGraph::ComputationGraph(bool batched) {
-  if(batched) {
+  {
+    std::lock_guard<std::mutex> guard(cgTrackerMutex);
+    if (cgTracker.get_active_count() > 0) {
+      std::cerr << "Memory allocator assumes only a single ComputationGraph at a time.\n";
+      throw std::runtime_error("Attempted to create >1 CG");
+    }
+    graph_id = cgTracker.inc_active_count();
+  }
+  if (batched)
     ee.reset(new BatchedExecutionEngine(*this));
-  } else {
+  else
     ee.reset(new SimpleExecutionEngine(*this));
-  }
-  if (n_hgs > 0) {
-    cerr << "Memory allocator assumes only a single ComputationGraph at a time.\n";
-    throw std::runtime_error("Attempted to create >1 CG");
-  }
-  ++n_hgs;
   immediate_compute = false;
   check_validity = false;
-  ++n_cumul_hgs;
-  graph_id = n_cumul_hgs;
 }
 
 ComputationGraph::~ComputationGraph() {
+  {
+    std::lock_guard<std::mutex> guard(cgTrackerMutex);
+    cgTracker.dec_active_count();
+  }
   this->clear();
-  --n_hgs;
+}
+
+bool ComputationGraph::is_stale() {
+  std::lock_guard<std::mutex> guard(cgTrackerMutex);
+
+  // This needs to change if have more than one CG.
+  return cgTracker.get_active_count() != 1 || graph_id != cgTracker.get_cumulative_count();
 }
 
 void ComputationGraph::clear() {
@@ -157,6 +183,13 @@ void ComputationGraph::clear() {
 }
 
 VariableIndex ComputationGraph::add_function_node(Node *node) {
+//  if (node == nullptr)
+//    cerr << "In ComputationGraph::add_function_node, node = " << node << endl;
+//  cerr << "In ComputationGraph::add_function_node, nodes = " << &nodes << endl;
+//  cerr << "In ComputationGraph::add_function_node, nodes.size() = " << nodes.size() << endl;
+  if (1000000 == nodes.size()) {
+    std::cout << "nodes.size() = " << nodes.size() << std::endl;
+    std::cin.get();
   VariableIndex new_node_index((VariableIndex)nodes.size());
   nodes.push_back(node);
   if (node->device == nullptr) {
@@ -174,9 +207,9 @@ VariableIndex ComputationGraph::add_function_node(Node *node) {
 
 CGCheckpoint ComputationGraph::_get_checkpoint() {
   CGCheckpoint p;
-  p.device_mem_checkpoint = default_device->mark(this);
   p.node_idx = nodes.size();
   p.par_node_idx = parameter_nodes.size();
+  p.device_mem_checkpoint = default_device->mark(this);
   return p;
 }
 
@@ -227,28 +260,25 @@ VariableIndex ComputationGraph::add_input(const real* ps, Device *device) {
   return new_node_index;
 }
 
-VariableIndex ComputationGraph::add_input(const Dim& d, const vector<float>& pm, Device *device) {
-  VariableIndex new_node_index(nodes.size());
-  nodes.push_back(new InputNode(d, pm));
-  nodes.back()->device = device;
-  set_dim_for_new_node(new_node_index);
-  return new_node_index;
+VariableIndex ComputationGraph::add_input(const Dim& d, const std::vector<float>& pm, Device *device) {
+  InputNode* new_node = new InputNode(d, pm);
+  return add_node(new_node, device);
 }
 
-VariableIndex ComputationGraph::add_input(const Dim& d, const vector<float>* pm, Device *device) {
-  VariableIndex new_node_index(nodes.size());
-  nodes.push_back(new InputNode(d, pm));
-  nodes.back()->device = device;
-  set_dim_for_new_node(new_node_index);
-  return new_node_index;
+VariableIndex ComputationGraph::add_input(const Dim& d, const std::vector<float>* pm, Device *device) {
+  InputNode* new_node = new InputNode(d, pm);
+  return add_node(new_node, device);
 }
 
-VariableIndex ComputationGraph::add_input(const Dim& d, const vector<unsigned int>& ids,
-                                          const vector<float>& data, Device *device, float defdata) {
-  VariableIndex new_node_index(nodes.size());
-  nodes.push_back(new SparseInputNode(d, ids, data, defdata));
-  nodes.back()->device = device;
-  set_dim_for_new_node(new_node_index);
+VariableIndex ComputationGraph::add_input(const Dim& d, const std::vector<unsigned int>& ids,
+                                          const std::vector<float>& data, Device *device, float defdata) {
+  SparseInputNode* new_node = new SparseInputNode(d, ids, data, defdata);
+  return add_node(new_node, device);
+}
+
+VariableIndex ComputationGraph::add_parameter_node(Node* node, Device* device) {
+  VariableIndex new_node_index(add_node(node, device));
+  parameter_nodes.push_back(new_node_index);
   return new_node_index;
 }
 
@@ -372,8 +402,15 @@ VariableIndex ComputationGraph::add_const_lookup(LookupParameter p, const std::v
 // factory function should call this right after creating a new node object
 // to set its dimensions properly
 void ComputationGraph::set_dim_for_new_node(const VariableIndex& i) {
+  if (i % 10000 == 0)
+    std::cerr << "Keith was here" << std::endl;
+  if (i < 0 || nodes.size() <= i) {
+    std::cerr << "Bad index in ComputationGraph::set_dim_for_new_node = " << i << std::endl;
+    std::cin.get();
+    std::runtime_error("Bad index in set_dim_for_new_node");
+  }
   Node* node = nodes[i];
-  vector<Dim> xds(node->arity());
+  std::vector<Dim> xds(node->arity());
   unsigned ai = 0;
   for (VariableIndex arg : node->args) {
     xds[ai] = nodes[arg]->dim;
@@ -385,7 +422,7 @@ void ComputationGraph::set_dim_for_new_node(const VariableIndex& i) {
     const Tensor& value = incremental_forward(i);
     if (check_validity)
       if (!value.is_valid()) {
-        cerr << "NaN or Inf detected\n";
+        std::cerr << "NaN or Inf detected\n";
         throw std::runtime_error("NaN or Inf detected");
       }
   }
@@ -412,39 +449,39 @@ void ComputationGraph::set_check_validity(bool cv) {
 }
 
 void ComputationGraph::print_graphviz() const {
-  cerr << "digraph G {\n  rankdir=LR;\n  nodesep=.05;\n";
+  std::cerr << "digraph G {\n  rankdir=LR;\n  nodesep=.05;\n";
   unsigned nc = 0;
   for (auto node : nodes) {
-    vector<string> var_names;
+    std::vector<std::string> var_names;
     for (auto arg : node->args)
-      var_names.push_back(string("v") + to_string((unsigned)arg));
-    cerr << "  N" << nc << " [label=\"v" << nc << " = "
+      var_names.push_back(std::string("v") + std::to_string((unsigned)arg));
+    std::cerr << "  N" << nc << " [label=\"v" << nc << " = "
          << node->as_string(var_names);
     if (profiling_flag){
-      cerr << " (MEM: ";
+      std::cerr << " (MEM: ";
       // if inplaced, note that no memory is used
       if(node->forward_inplaced()) {
         if(node->backward_inplaced()) {
-          cerr << "         0 KiB (forward/backward inplaced))";
+          std::cerr << "         0 KiB (forward/backward inplaced))";
         } else {
-          cerr << std::setprecision(4) << std::setw(11) << node->dim.size() * sizeof(real) / 1024.0
+          std::cerr << std::setprecision(4) << std::setw(11) << node->dim.size() * sizeof(real) / 1024.0
                << " KiB (forward inplaced))";
         }
       } else {
-        cerr << std::setprecision(4) << std::setw(11) << (node->aux_storage_size() + 2*node->dim.size() * sizeof(real)) / 1024.0
+        std::cerr << std::setprecision(4) << std::setw(11) << (node->aux_storage_size() + 2*node->dim.size() * sizeof(real)) / 1024.0
              << " KiB)";
       }
     }
-    cerr << "\"];\n";
+    std::cerr << "\"];\n";
     for (auto arg : node->args)
-      cerr << "  N" << ((unsigned)arg) << " -> N" << nc << ";\n";
+      std::cerr << "  N" << ((unsigned)arg) << " -> N" << nc << ";\n";
     ++nc;
   }
-  cerr << "}\n";
+  std::cerr << "}\n";
 
   if(profiling_flag>1){
-    cerr << "\nAggregated nodes, sorted by memory consumption:\n";
-    std::map<string,unsigned> nodes_map, count_map;
+    std::cerr << "\nAggregated nodes, sorted by memory consumption:\n";
+    std::map<std::string,unsigned> nodes_map, count_map;
     double total_memory = 0;
     for (auto node : nodes) {
       unsigned mem = node->aux_storage_size() + 2*node->dim.size() * sizeof(real);
@@ -456,7 +493,7 @@ void ComputationGraph::print_graphviz() const {
       count_map[node->as_dummy_string()] += 1;
       total_memory += mem;
     }
-    std::multimap<unsigned,string> nodes_map_dst = flip_map(nodes_map);
+    std::multimap<unsigned, std::string> nodes_map_dst = flip_map(nodes_map);
     for (auto &item : nodes_map_dst) {
       std::cerr << std::setprecision(4) << std::setw(11) << (item.first/1024.0) << " KiB\t" << (100.0*(double)item.first/total_memory) << "%\t" << "called " << count_map[item.second] << "x\t" << item.second << std::endl;
     }
@@ -466,4 +503,3 @@ void ComputationGraph::print_graphviz() const {
 }
 
 }  // namespace dynet
-

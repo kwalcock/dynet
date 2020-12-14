@@ -88,6 +88,7 @@ struct ComputationGraph {
   ComputationGraph();
   ComputationGraph(bool batched);
   ~ComputationGraph();
+  bool is_stale();
 
   // INPUTS
   /**
