@@ -152,6 +152,7 @@ namespace dynet {
         throw std::runtime_error("Attempted to create >1 CG");
       }
       graph_id = cgTracker.inc_active_count();
+      std::cout << "Computation Graph " << graph_id << " was created." << std::endl;
     }
     if (batched)
       ee.reset(new BatchedExecutionEngine(*this));
@@ -165,6 +166,7 @@ namespace dynet {
     {
       std::lock_guard<std::mutex> guard(cgTrackerMutex);
       cgTracker.dec_active_count();
+      std::cout << "Computation Graph " << graph_id << " was destroyed." << std::endl;
     }
     this->clear();
   }
@@ -178,26 +180,22 @@ namespace dynet {
 
   void ComputationGraph::clear() {
     parameter_nodes.clear();
-    for (auto n : nodes) delete n;
-    nodes.clear();
+    for (auto n : nodes) {
+      // Make sure we never use a stale ComputationGraph.
+      n->set_cg(nullptr);
+      delete n;
+    }
+    nodes.clear(); // This should not be necessary.
     ee->invalidate();
   }
 
   VariableIndex ComputationGraph::add_function_node(Node *node) {
-    //  if (node == nullptr)
-    //    cerr << "In ComputationGraph::add_function_node, node = " << node << endl;
-    //  cerr << "In ComputationGraph::add_function_node, nodes = " << &nodes << endl;
-    //  cerr << "In ComputationGraph::add_function_node, nodes.size() = " << nodes.size() << endl;
-    if (1000000 == nodes.size()) {
-      std::cout << "nodes.size() = " << nodes.size() << std::endl;
-      std::cin.get();
-    }
     Device* device = node->device;
     if (device == nullptr)
       device = node->arity() > 0 ? nodes[node->args[0]]->device : dynet::default_device;
     if (device->type == DeviceType::GPU && !node->has_cuda_implemented)
       DYNET_NO_CUDA_IMPL_ERROR(node->as_dummy_string())
-      return add_node(node, device);
+    return add_node(node, device);
   }
 
   CGCheckpoint ComputationGraph::_get_checkpoint() {
@@ -341,8 +339,6 @@ namespace dynet {
   // factory function should call this right after creating a new node object
   // to set its dimensions properly
   void ComputationGraph::set_dim_for_new_node(const VariableIndex& i) {
-    if (i % 10000 == 0)
-      std::cerr << "Keith was here" << std::endl;
     if (i < 0 || nodes.size() <= i) {
       std::cerr << "Bad index in ComputationGraph::set_dim_for_new_node = " << i << std::endl;
       std::cin.get();
