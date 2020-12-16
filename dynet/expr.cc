@@ -27,15 +27,6 @@ Expression::~Expression() {
   i = 0;
 }
 
-std::string get_device_name() const;
-
-const bool is_stale() const {
-  return pg->is_stale();
-}
-
-
-
-
 std::string Expression::get_device_name() const {
   if (pg->nodes[i]->device == nullptr)
     throw std::runtime_error("Unknown device for node:" + std::to_string(i));
