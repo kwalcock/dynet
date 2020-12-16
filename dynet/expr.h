@@ -34,7 +34,7 @@ struct Expression {
   ComputationGraph *pg;
   VariableIndex i;
 
-  Expression() : Expression(nullptr, 0) {}
+  Expression();
 
   /**
    * \brief Base expression constructor
@@ -43,7 +43,9 @@ struct Expression {
    * \param pg Pointer to the computation graph
    * \param i Variable index
    */
-  Expression(ComputationGraph *pg, VariableIndex i) : pg(pg), i(i) {}
+  Expression(ComputationGraph *pg, VariableIndex i);
+
+  virtual ~Expression();
 
   std::string get_device_name() const;
 

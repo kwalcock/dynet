@@ -1,6 +1,7 @@
 #include "dynet/expr.h"
 
 #include <initializer_list>
+#include <mutex>
 
 #include "dynet/nodes.h"
 #include "dynet/devices.h"
@@ -8,6 +9,32 @@
 namespace dynet {
 
 using std::vector;
+
+int expressionCount = 0;
+std::mutex expressionCountMutex;
+
+Expression::Expression() : Expression(nullptr, 0) {}
+
+Expression::Expression(ComputationGraph *pg, VariableIndex i) : pg(pg), i(i) {
+  const std::lock_guard<std::mutex> guard(expressionCountMutex);
+  expressionCount++;
+}
+
+Expression::~Expression() {
+  const std::lock_guard<std::mutex> guard(expressionCountMutex);
+  expressionCount--;
+  pg = nullptr;
+  i = 0;
+}
+
+std::string get_device_name() const;
+
+const bool is_stale() const {
+  return pg->is_stale();
+}
+
+
+
 
 std::string Expression::get_device_name() const {
   if (pg->nodes[i]->device == nullptr)
