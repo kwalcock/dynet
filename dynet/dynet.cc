@@ -237,8 +237,8 @@ namespace dynet {
 
   VariableIndex ComputationGraph::add_node(Node* node, Device* device) {
     VariableIndex new_node_index(nodes.size());
+    node->device = device;
     nodes.push_back(node);
-    nodes.back()->device = device;
     set_dim_for_new_node(new_node_index);
     return new_node_index;
   }
