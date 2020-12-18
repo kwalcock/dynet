@@ -44,6 +44,7 @@ struct Expression {
    * \param i Variable index
    */
   Expression(ComputationGraph *pg, VariableIndex i);
+  Expression(const Expression& other);
 
   virtual ~Expression();
 

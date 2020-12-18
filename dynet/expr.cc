@@ -20,11 +20,20 @@ Expression::Expression(ComputationGraph *pg, VariableIndex i) : pg(pg), i(i) {
   expressionCount++;
 }
 
+Expression::Expression(const Expression& other) {
+  const std::lock_guard<std::mutex> guard(expressionCountMutex);
+  expressionCount++;
+
+  this->pg = other.pg; // This would be an alias not registered elsewhere.
+  this->i = other.i;
+}
+
 Expression::~Expression() {
   const std::lock_guard<std::mutex> guard(expressionCountMutex);
   expressionCount--;
   pg = nullptr;
   i = 0;
+  *this = nullptr;
 }
 
 std::string Expression::get_device_name() const {
