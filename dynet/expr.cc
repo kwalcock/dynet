@@ -1,5 +1,6 @@
 #include "dynet/expr.h"
 
+#include <climits>
 #include <initializer_list>
 #include <mutex>
 
@@ -31,9 +32,8 @@ Expression::Expression(const Expression& other) {
 Expression::~Expression() {
   const std::lock_guard<std::mutex> guard(expressionCountMutex);
   expressionCount--;
-  pg = nullptr;
-  i = 0;
-  *this = nullptr;
+  pg = nullptr; // This is (overly) defensive programming.
+  i = UINT_MAX; // Try to make it hit an unused memory area if misused.
 }
 
 std::string Expression::get_device_name() const {
