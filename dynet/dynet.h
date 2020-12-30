@@ -497,8 +497,8 @@ struct ComputationGraph {
   CGCheckpoint _get_checkpoint();
   void _revert(CGCheckpoint checkpoint);
 
-  VariableIndex ComputationGraph::add_node(Node* node, Device* device);
-  VariableIndex ComputationGraph::add_parameter_node(Node* node, Device* device);
+  VariableIndex add_node(Node* node, Device* device);
+  VariableIndex add_parameter_node(Node* node, Device* device);
 };
 
 // represents an SSA variable

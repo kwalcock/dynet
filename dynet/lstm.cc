@@ -587,7 +587,8 @@ void VanillaLSTMBuilder::disable_dropout() {
 
 CompactVanillaLSTMBuilder::CompactVanillaLSTMBuilder() : has_initial_state(false),
     layers(0), input_dim(0), hid(0), dropout_rate_h(0), weightnoise_std(0),
-    dropout_masks_valid(false), _cg(nullptr) { }
+    dropout_masks_valid(false), _cg(nullptr) {
+}
 
 CompactVanillaLSTMBuilder::CompactVanillaLSTMBuilder(unsigned layers, unsigned input_dim,
     unsigned hidden_dim, ParameterCollection& model) : layers(layers), input_dim(input_dim),
