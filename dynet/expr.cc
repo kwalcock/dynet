@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <mutex>
 
+#include "dynet.h" // DEBUG
 #include "dynet/nodes.h"
 #include "dynet/devices.h"
 
@@ -12,6 +13,7 @@ namespace dynet {
 using std::vector;
 
 int expressionCount = 0;
+int expressionTotal = 0;
 std::mutex expressionCountMutex;
 
 Expression::Expression() : Expression(nullptr, 0) {}
@@ -19,14 +21,18 @@ Expression::Expression() : Expression(nullptr, 0) {}
 Expression::Expression(ComputationGraph *pg, VariableIndex i) : pg(pg), i(i) {
   const std::lock_guard<std::mutex> guard(expressionCountMutex);
   expressionCount++;
+  id = expressionTotal++;
+  DEBUG("Expression", "construct", id, expressionCount, expressionTotal);
 }
 
 Expression::Expression(const Expression& other) {
   const std::lock_guard<std::mutex> guard(expressionCountMutex);
-  expressionCount++;
-
   this->pg = other.pg; // This would be an alias not registered elsewhere.
   this->i = other.i;
+
+  expressionCount++;
+  this->id = expressionTotal++;
+  DEBUG("Expression", "construct", id, expressionCount, expressionTotal);
 }
 
 Expression::~Expression() {
@@ -34,6 +40,7 @@ Expression::~Expression() {
   expressionCount--;
   pg = nullptr; // This is (overly) defensive programming.
   i = UINT_MAX; // Try to make it hit an unused memory area if misused.
+  DEBUG("Expression", "destruct", id, expressionCount, expressionTotal);
 }
 
 std::string Expression::get_device_name() const {

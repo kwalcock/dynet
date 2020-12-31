@@ -27,9 +27,10 @@ namespace dynet {
     }
 
     unsigned inc_active_count() {
+      int index = n_cumul_hgs;
       n_hgs++;
       n_cumul_hgs++;
-      return n_cumul_hgs;
+      return index;
     }
 
     void dec_active_count() {
@@ -160,6 +161,8 @@ namespace dynet {
       ee.reset(new SimpleExecutionEngine(*this));
     immediate_compute = false;
     check_validity = false;
+
+    DEBUG("ComputationGraph", "construct", graph_id, cgTracker.get_active_count(), cgTracker.get_cumulative_count());
   }
 
   ComputationGraph::~ComputationGraph() {
@@ -167,6 +170,7 @@ namespace dynet {
       std::lock_guard<std::mutex> guard(cgTrackerMutex);
       cgTracker.dec_active_count();
       std::cout << "Computation Graph " << graph_id << " was destroyed." << std::endl;
+      DEBUG("ComputationGraph", "destruct", graph_id, cgTracker.get_active_count(), cgTracker.get_cumulative_count());
     }
     this->clear();
   }
@@ -439,4 +443,7 @@ namespace dynet {
     }
   }
 
+  void debug(const char* who, const char* what, int index, int count, int total) {
+    std::cout << who << '\t' << what << '\t' << index << '\t' << count << '\t' << total << std::endl;
+  }
 }  // namespace dynet

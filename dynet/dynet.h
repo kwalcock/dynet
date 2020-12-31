@@ -798,6 +798,11 @@ inline VariableIndex ComputationGraph::add_function(
       new Function(arguments, std::forward<Args>(side_information)...));
 }
 
+#define DEBUG(who, what, index, count, total) debug(who, what, index, count, total)
+//#define DEBUG(who, what, index, count, total)
+
+void debug(const char* who, const char* what, int index, int count, int total);
+
 }  // namespace dynet
 
 #endif
