@@ -178,8 +178,9 @@ namespace dynet {
   bool ComputationGraph::is_stale() {
     std::lock_guard<std::mutex> guard(cgTrackerMutex);
 
-    // This needs to change if have more than one CG.
-    return cgTracker.get_active_count() != 1 || graph_id != cgTracker.get_cumulative_count();
+    // This needs to change if have more than one CG.  When the cumulative count is 1,
+    // the graph_id is 0.  0 is the 1th ComputationGraph.
+    return cgTracker.get_active_count() != 1 || graph_id != cgTracker.get_cumulative_count() - 1;
   }
 
   void ComputationGraph::clear() {
