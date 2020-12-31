@@ -33,6 +33,7 @@ namespace dynet {
 struct Expression {
   ComputationGraph *pg;
   VariableIndex i;
+  int id;
 
   Expression();
 
