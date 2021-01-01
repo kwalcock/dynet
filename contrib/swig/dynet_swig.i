@@ -6,42 +6,83 @@
   import java.io.*;
 %}
 
-// Automatically load the library code. It's included as a resource in the jar file, so we need to
-// extract the resource, write it to a temp file, then call System.load() on the temp file.
+// Automatically load the library code. It may be included as a resource in the jar file, so we need to
+// extract the resource, write it to a temp file, then call System.load() on the temp file.  The resource
+// can be overwritten if the dynet_swig file is placed in the current directory or in the home directory.
+// In those cases it can be loaded directly.
 %pragma(java) jniclasscode=%{
-    static {
-        try {
-            File tempFile = File.createTempFile("dynet", ".dll");
-            String libname = System.mapLibraryName("dynet_swig");
 
-            if (libname.endsWith("dylib")) {
-              libname = libname.replace(".dylib", ".jnilib");
-            }
-
-            // Load the dylib from the JAR-ed resource file, and write it to the temp file.
-            InputStream is = dynet_swigJNI.class.getClassLoader().getResourceAsStream(libname);
-            OutputStream os = new FileOutputStream(tempFile);
-
-            byte buf[] = new byte[8192];
-            int len;
-            while ((len = is.read(buf)) > 0) {
-                os.write(buf, 0, len);
-            }
-
-            os.flush();
-            InputStream lock = new FileInputStream(tempFile);
-            os.close();
-
-            // Load the library from the tempfile.
-            System.load(tempFile.getPath());
-            lock.close();
-
-            // And delete the tempfile.
-            tempFile.delete();
-        } catch (IOException io) {
-            System.out.println(io);
-        }
+  static boolean loadFromFile(String pathname) {
+    try {
+      System.load(pathname);
+      System.err.println("Loading DyNet from " + pathname + "...");
+      return true;
     }
+    catch (UnsatisfiedLinkError exception) {
+      return false;
+    }
+  }
+
+  static boolean loadFromFile(String dir, String libname) {
+    String pathname = dir + File.separator + libname;
+    return loadFromFile(pathname);
+  }
+
+  static String replaceSuffix(String text, String prev, String next) {
+    if (text.endsWith(prev))
+      return text.substring(0, text.length() - prev.length()) + next;
+    else
+      return text;
+  }
+
+  static {
+    String filename = "dynet_swig";
+    String libname = System.mapLibraryName(filename);
+    // The Mac reports a libname ending with .dylib, but Java needs .jnilib instead.
+    String jniname = replaceSuffix(libname, ".dylib", ".jnilib");
+
+    boolean loaded = false;
+    if (!loaded)
+      loaded = loadFromFile(System.getProperty("user.dir"), jniname); // Try current directory first.
+    if (!loaded)
+      loaded = loadFromFile(System.getProperty("user.home"), jniname); // Try home directory next.
+    if (!loaded) {
+      try {
+        // Attempt to load from the resource via the tmp directory.
+        int index = jniname.indexOf('.');
+        String prefix = jniname.substring(0, index);
+        String suffix = jniname.substring(index);
+        File tempFile = File.createTempFile(prefix + "-", suffix);
+
+        // Load the jnilib from the JAR-ed resource file, and write it to the temp file.
+        // We've anticipated the name and used it for the resource, but that could go wrong.
+        InputStream is = dynet_swigJNI.class.getClassLoader().getResourceAsStream(jniname);
+        OutputStream os = new FileOutputStream(tempFile);
+
+        byte buf[] = new byte[8192];
+        int len;
+        while ((len = is.read(buf)) > 0) {
+          os.write(buf, 0, len);
+        }
+
+        os.flush();
+        InputStream lock = new FileInputStream(tempFile);
+        os.close();
+
+        loaded = loadFromFile(tempFile.getAbsolutePath());
+        lock.close();
+
+        tempFile.delete();
+
+        if (!loaded)
+          throw new RuntimeException("DyNet could not be loaded!");
+      }
+      catch (Exception exception) {
+        exception.printStackTrace(System.err);
+      }
+    }
+  }
+
 %}
 
 // Required header files for compiling wrapped code
@@ -112,7 +153,73 @@ VECTORCONSTRUCTOR(std::vector<dynet::Parameter>, ParameterVector, ParameterVecto
 // Convert C++ exceptions into Java exceptions. This provides
 // nice error messages for each listed exception, and a default
 // "unknown error" message for all others.
-%catches(std::invalid_argument, ...);
+%catches(
+  std::runtime_error,
+  std::logic_error,
+  std::exception,
+  ...
+);
+
+%{
+
+#include <csignal>
+
+namespace dynet {
+  void throwRuntimeError() {
+    throw std::runtime_error("This is a runtime error.");
+  }
+
+  void throwSubRuntimeError() {
+    throw std::overflow_error("This is an overflow error, a kind of runtime error.");
+  }
+
+  void throwLogicError() {
+    throw std::logic_error("This is a logic error.");
+  }
+
+  void throwSubLogicError() {
+    throw std::domain_error("This is a domain error, a kind of logic error.");
+  }
+
+  void throwException() {
+    throw std::exception();
+  }
+
+  void throwSubException() {
+    throw std::bad_cast();
+  }
+
+  void throwUnknown() {
+    throw 42;
+  }
+
+  void raiseSignal(int signal) {
+    std::raise(signal);
+  }
+
+  void readNullPtr() {
+    int result = *static_cast<int *>(nullptr);
+  }
+
+  void writeNullPtr() {
+    *static_cast<int *>(nullptr) = 42;
+  }
+}
+
+%}
+
+namespace dynet {
+  void throwRuntimeError();
+  void throwSubRuntimeError();
+  void throwLogicError();
+  void throwSubLogicError();
+  void throwException();
+  void throwSubException();
+  void throwUnknown();
+  void raiseSignal(int signal);
+  void readNullPtr();
+  void writeNullPtr();
+}
 
 %pointer_functions(unsigned, uintp);
 %pointer_functions(int, intp);
