@@ -17,10 +17,12 @@ void debugMem(const char* file, int line);
 
 class MemDebug {
 public:
+  // Add interactive to be able to debug memory?
   MemDebug(bool atExit = true);
   ~MemDebug();
 
   void debug();
+  void leak();
 };
 
 #if defined(_DEBUG) && defined(_MSC_VER)

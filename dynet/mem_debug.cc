@@ -40,5 +40,14 @@ void MemDebug::debug() {
 #endif
 }
 
+void MemDebug::leak() {
+#if defined(_DEBUG) && defined(_MSC_VER)
+  // This guarantees a memory leak which when displayed at program termination
+  // verifies that leak detection is active.
+  char* leak = (char*)malloc(20);
+  strcpy(leak, "Hello, memory leak!");
+#endif
+}
+
 MemDebug::~MemDebug() {
 }
