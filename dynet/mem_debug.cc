@@ -5,8 +5,11 @@
 
 void debugMem(const char* file, int line) {
 #ifdef _MSC_VER
-  std::cerr << "Memory leaks in " << file << " at line " << line << std::endl;
-  _CrtDumpMemoryLeaks();
+  int leaksFound = _CrtDumpMemoryLeaks();
+  if (leaksFound)
+    std::cerr << "Memory leaks were found when checked from " << file << " at line " << line << "." << std::endl;
+  else
+    std::cerr << "No memory leaks were found." << std::endl;
 #endif
 }
 
@@ -18,12 +21,24 @@ void debugMem(const char* file, int line) {
 
 #endif
 
-MemDebug::MemDebug() {
+MemDebug::MemDebug(bool atExit) {
 #if defined(_DEBUG) && defined(_MSC_VER)
-  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+  // _CRTDBG_ALLOC_MEM_DF = Turn on debug allocation
+  // _CRTDBG_LEAK_CHECK_DF = Leak check at program exit
+  int flags = _CRTDBG_ALLOC_MEM_DF;
+  if (atExit)
+    flags |= _CRTDBG_LEAK_CHECK_DF;
+  _CrtSetDbgFlag(flags);
+  _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+  _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+#endif
+}
+
+void MemDebug::debug() {
+#if defined(_DEBUG) && defined(_MSC_VER)
+  debugMem(__FILE__, __LINE__);
 #endif
 }
 
 MemDebug::~MemDebug() {
-  //  debugMem(__FILE__, __LINE__);
 }

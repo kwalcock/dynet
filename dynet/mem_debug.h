@@ -17,8 +17,10 @@ void debugMem(const char* file, int line);
 
 class MemDebug {
 public:
-  MemDebug();
+  MemDebug(bool atExit = true);
   ~MemDebug();
+
+  void debug();
 };
 
 #if defined(_DEBUG) && defined(_MSC_VER)
