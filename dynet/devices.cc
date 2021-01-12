@@ -131,13 +131,13 @@ void Device_GPU::reset_rng(unsigned seed) {
 #endif
 
 Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared) :
-  Device(my_id, DeviceType::CPU, &cpu_mem), shmem(mem) {
+    Device(my_id, DeviceType::CPU, &cpu_mem), shmem(mem), shared(shared) {
   if (shared) shmem = new SharedAllocator();
-  kSCALAR_MINUSONE = (float*) mem->mymalloc(sizeof(float));
+  kSCALAR_MINUSONE = (float*) shmem->mymalloc(sizeof(float));
   *kSCALAR_MINUSONE = -1;
-  kSCALAR_ONE = (float*) mem->mymalloc(sizeof(float));
+  kSCALAR_ONE = (float*) shmem->mymalloc(sizeof(float));
   *kSCALAR_ONE = 1;
-  kSCALAR_ZERO = (float*) mem->mymalloc(sizeof(float));
+  kSCALAR_ZERO = (float*) shmem->mymalloc(sizeof(float));
   *kSCALAR_ZERO = 0;
   name = "CPU";
 
@@ -151,8 +151,23 @@ Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared) :
   pools[3] = new AlignedMemoryPool("CPU scratch memory", (mbs.used[3] << 20), &cpu_mem);
 }
 
-Device_CPU::~Device_CPU() {}
+Device_CPU::~Device_CPU() {
+  clear();
+}
 
+void Device_CPU::clear() {
+
+  for (AlignedMemoryPool* pool : pools) delete pool;
+  pools.clear();
+
+  delete edevice;
+
+  shmem->myfree(kSCALAR_ONE);
+  shmem->myfree(kSCALAR_ZERO);
+  shmem->myfree(kSCALAR_MINUSONE);
+
+  if (shared) delete shmem;
+}
 
 DeviceManager::DeviceManager() {}
 
@@ -161,9 +176,7 @@ DeviceManager::~DeviceManager() {
 }
 
 void DeviceManager::clear() {
-  // TODO: Devices cannot be deleted at the moment because the destructor
-  // is protected
-  // for(Device* device : devices) delete device;
+  for (Device* device : devices) delete device;
   devices.clear();
 }
 

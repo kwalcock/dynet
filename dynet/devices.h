@@ -26,8 +26,8 @@ class Device {
   Device(int i, DeviceType t, MemAllocator* m) : device_id(i), type(t), mem(m), pools(4, nullptr) {}
   Device(const Device&) = delete;
   Device& operator=(const Device&) = delete;
-  virtual ~Device();
  public:
+  virtual ~Device(); // This was made public recently.
   void reset_rng(unsigned seed) {};
   int device_id;
   DeviceType type;
@@ -66,9 +66,11 @@ class Device_CPU : public Device {
   typedef Eigen::DefaultDevice EigenDevice;
   explicit Device_CPU(int my_id, const DeviceMempoolSizes & mb, bool shared);
   ~Device_CPU();
+  void clear();
   CPUAllocator cpu_mem;
   Eigen::DefaultDevice* edevice;
   MemAllocator* shmem;
+  bool shared;
 };
 
 class DeviceManager final {
