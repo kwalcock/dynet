@@ -133,11 +133,11 @@ void Device_GPU::reset_rng(unsigned seed) {
 Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared) :
   Device(my_id, DeviceType::CPU, &cpu_mem), shmem(mem) {
   if (shared) shmem = new SharedAllocator();
-  kSCALAR_MINUSONE = (float*) mem->malloc(sizeof(float));
+  kSCALAR_MINUSONE = (float*) mem->mymalloc(sizeof(float));
   *kSCALAR_MINUSONE = -1;
-  kSCALAR_ONE = (float*) mem->malloc(sizeof(float));
+  kSCALAR_ONE = (float*) mem->mymalloc(sizeof(float));
   *kSCALAR_ONE = 1;
-  kSCALAR_ZERO = (float*) mem->malloc(sizeof(float));
+  kSCALAR_ZERO = (float*) mem->mymalloc(sizeof(float));
   *kSCALAR_ZERO = 0;
   name = "CPU";
 

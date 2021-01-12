@@ -17,7 +17,7 @@ void* InternalMemoryPool::allocate(size_t n) {
 
 void InternalMemoryPool::sys_alloc(size_t cap) {
   capacity = a->round_up_align(cap);
-  mem = a->malloc(capacity);
+  mem = a->mymalloc(capacity);
   if (mem == NULL)
     DYNET_RUNTIME_ERR(name << " failed to allocate " << capacity);
   used = 0;
@@ -45,14 +45,14 @@ void* AlignedMemoryPool::allocate(size_t n) {
   return res;
 }
 
-void AlignedMemoryPool::free() {
+void AlignedMemoryPool::myfree() {
   if (current > 0) {
     for (auto p : pools) { delete p; }
     pools.clear();
     pools.push_back(new InternalMemoryPool(name, cap, a));
     current = 0;
   }
-  pools[0]->free();
+  pools[0]->myfree();
 }
 
 void AlignedMemoryPool::zero_allocated_memory() {

@@ -231,7 +231,7 @@ namespace dynet {
     tbvec(fx_g).device(*dev.edevice) = tbvec(fx_g).tanh();
     tbvec(fx).slice(indices_g, sizes_1).device(*dev.edevice) = tbvec(fx_g);
 
-    scratch_allocator->free();
+    scratch_allocator->myfree();
   }
 
   template<class MyDevice>
@@ -521,7 +521,7 @@ namespace dynet {
     }
     // no gradients for dropout masks computed
 
-    scratch_allocator->free();
+    scratch_allocator->myfree();
 
 
   }
@@ -584,7 +584,7 @@ namespace dynet {
 
     tbvec(fx).device(*dev.edevice) = tbvec(*gates_t).slice(indices_i, sizes_1);
     tbvec(fx).device(*dev.edevice) = tbvec(fx) * tbvec(*gates_t).slice(indices_g, sizes_1) + tbvec(f_t) * tbvec(*c_tm1);
-    scratch_allocator->free();
+    scratch_allocator->myfree();
 
   }
 
@@ -699,7 +699,7 @@ namespace dynet {
       tb<2>(dEdxi_o).device(*dev.edevice) = tb<2>(dEdf) * tb<2>(*xs[0]).tanh();
       tb<2>(dEdxi).slice(indices_o, sizes_1).device(*dev.edevice) += tb<2>(dEdxi_o);
     }
-    scratch_allocator->free();
+    scratch_allocator->myfree();
   }
 
   DYNET_NODE_INST_DEV_IMPL(VanillaLSTMH)

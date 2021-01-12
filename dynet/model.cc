@@ -264,7 +264,7 @@ ParameterCollectionStorage::ParameterCollectionStorage(float weight_decay_lambda
 
 ParameterCollectionStorage::~ParameterCollectionStorage() {
   if (gradient_norm_scratch)
-    device_manager->get_global_device("CPU")->mem->free(gradient_norm_scratch);
+    device_manager->get_global_device("CPU")->mem->myfree(gradient_norm_scratch);
 }
 
 void ParameterCollectionStorage::project_weights(float radius) {
@@ -272,9 +272,9 @@ void ParameterCollectionStorage::project_weights(float radius) {
   auto scratch_size = all_params.size() * sizeof(float);
   if (project_scratch == nullptr || sizeof(project_scratch) < scratch_size) {
     if (project_scratch != nullptr) {
-      default_device->mem->free(gradient_norm_scratch);
+      default_device->mem->myfree(gradient_norm_scratch);
     }
-    project_scratch = (float *) default_device->mem->malloc(scratch_size);
+    project_scratch = (float *) default_device->mem->mymalloc(scratch_size);
   }
   int pi = 0;
   for (auto p : all_params) {
@@ -808,9 +808,9 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
   auto scratch_size = (all_params.size() + 1) * sizeof(float);
   if (gradient_norm_scratch == nullptr || sizeof(gradient_norm_scratch) < scratch_size) {
     if (gradient_norm_scratch != nullptr) {
-      dev.mem->free(gradient_norm_scratch);
+      dev.mem->myfree(gradient_norm_scratch);
     }
-    gradient_norm_scratch = (float*)dev.mem->malloc(scratch_size);
+    gradient_norm_scratch = (float*)dev.mem->mymalloc(scratch_size);
   }
   size_t pi;
   size_t k1 = 0, k2 = 0;
@@ -827,7 +827,7 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
     } else {
       DYNET_RUNTIME_ERR("Incorrect device type");
     }
-    float *v = (float *)dev_k->mem->malloc(sizeof(float));
+    float *v = (float *)dev_k->mem->mymalloc(sizeof(float));
     all_params[pi]->g_squared_l2norm(v);
     if (dev_k->type == DeviceType::CPU) {
       gradient_norm_scratch[pi] = *v;
@@ -839,7 +839,7 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
     }
 #endif
     else { throw std::runtime_error("Bad device type"); }
-    dev_k->mem->free(v);
+    dev_k->mem->myfree(v);
   }
   Tensor scratch_t({(unsigned int)all_params.size()}, gradient_norm_scratch, &dev, DeviceMempool::NONE);
   Tensor sum_t({1}, gradient_norm_scratch + pi, &dev, DeviceMempool::NONE);

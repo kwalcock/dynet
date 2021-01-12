@@ -16,12 +16,12 @@ class InternalMemoryPool {
   }
 
   ~InternalMemoryPool() {
-      a->free(mem);
+      a->myfree(mem);
   }
 
   void* allocate(size_t n); 
 
-  void free() {
+  void myfree() {
     //std::cerr << "freeing " << used << " bytes\n";
     used = 0;
   }
@@ -51,7 +51,7 @@ class AlignedMemoryPool {
 
     void* allocate(size_t n);
 
-    void free();
+    void myfree();
 
     void zero_allocated_memory();
 
