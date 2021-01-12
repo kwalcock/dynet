@@ -221,6 +221,19 @@ namespace dynet {
   void writeNullPtr();
 }
 
+namespace dynet {
+
+class MemDebug {
+ public:
+  MemDebug(bool atExit = true);
+  ~MemDebug();
+
+  void debug();
+  void leak();
+};
+
+}
+
 %pointer_functions(unsigned, uintp);
 %pointer_functions(int, intp);
 %pointer_functions(float, floatp);
