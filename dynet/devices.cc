@@ -181,8 +181,8 @@ void DeviceManager::clear() {
 }
 
 void DeviceManager::add(Device* d) {
-    devices.push_back(d);
-    devices_map[d->name] = d;
+  devices.push_back(d);
+  devices_map[d->name] = d;
 }
 
 Device* DeviceManager::get_global_device(const std::string & name) {
