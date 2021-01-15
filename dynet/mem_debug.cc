@@ -1,7 +1,7 @@
 #include "dynet/mem_debug.h"
 #include <iostream>
 
-#ifdef _DEBUG
+namespace dynet {
 
 void debugMem(const char* file, int line) {
 #ifdef _MSC_VER
@@ -13,12 +13,28 @@ void debugMem(const char* file, int line) {
 #endif
 }
 
-#else
-
-void debugMem(const char* file, int line) {
-  // no-op
+void* dbg_malloc(size_t size) {
+  if (size == 1) {
+    std::cerr << "Malloc with size of 1!" << std::endl;
+  }
+  return malloc(size);
 }
 
+#if defined(_DEBUG) && defined(_MSC_VER)
+int get_client_block(const char* file, int line) {
+  return _CLIENT_BLOCK;
+}
+#endif
+
+MemDebug localMemDebug(true);
+
+int callSetBreak(int index) {
+    localMemDebug.set_break(index);
+    return index;
+}
+
+#if defined(_DEBUG) && defined(_MSC_VER)
+int breakIndex = callSetBreak(5);
 #endif
 
 MemDebug::MemDebug(bool atExit) {
@@ -29,9 +45,12 @@ MemDebug::MemDebug(bool atExit) {
   if (atExit)
     flags |= _CRTDBG_LEAK_CHECK_DF;
   _CrtSetDbgFlag(flags);
-  _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+  _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG /*| _CRTDBG_MODE_WNDW*/);
   _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
 #endif
+}
+
+MemDebug::~MemDebug() {
 }
 
 void MemDebug::debug() {
@@ -44,10 +63,15 @@ void MemDebug::leak() {
 #if defined(_DEBUG) && defined(_MSC_VER)
   // This guarantees a memory leak which when displayed at program termination
   // verifies that leak detection is active.
-  char* leak = (char*)malloc(20);
+  char* leak = (char*)MALLOC(20);
   strcpy(leak, "Hello, memory leak!");
 #endif
 }
 
-MemDebug::~MemDebug() {
+void MemDebug::set_break(long index) {
+#if defined(_DEBUG) && defined(_MSC_VER)
+  _CrtSetBreakAlloc(index);
+#endif
 }
+
+} // namespace dynet

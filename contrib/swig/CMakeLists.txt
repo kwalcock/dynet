@@ -61,6 +61,7 @@ set(SWIG_JAVA_FILES
     "${CMAKE_SWIG_OUTDIR}/LookupParameter.java"
     "${CMAKE_SWIG_OUTDIR}/LookupParameterStorage.java"
     "${CMAKE_SWIG_OUTDIR}/LookupParameterStorageVector.java"
+	"${CMAKE_SWIG_OUTDIR}/MemDebug.java"
     "${CMAKE_SWIG_OUTDIR}/MomentumSGDTrainer.java"
     "${CMAKE_SWIG_OUTDIR}/NaryTreeLSTMBuilder.java"
     "${CMAKE_SWIG_OUTDIR}/Parameter.java"

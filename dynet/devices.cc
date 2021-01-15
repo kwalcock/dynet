@@ -1,6 +1,7 @@
 #include "dynet/devices.h"
 
 #include <iostream>
+#include <mutex>
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -98,9 +99,9 @@ Device_GPU::Device_GPU(int my_id, const DeviceMempoolSizes & mbs,
 #if HAVE_CUDNN
   CUDNN_CHECK(cudnnCreate(&cudnnHandle));
 #endif
-  kSCALAR_MINUSONE = (float*)gpu_mem.malloc(sizeof(float));
-  kSCALAR_ONE = (float*)gpu_mem.malloc(sizeof(float));
-  kSCALAR_ZERO = (float*)gpu_mem.malloc(sizeof(float));
+  kSCALAR_MINUSONE = (float*)gpu_mem.mymalloc(sizeof(float));
+  kSCALAR_ONE = (float*)gpu_mem.mymalloc(sizeof(float));
+  kSCALAR_ZERO = (float*)gpu_mem.mymalloc(sizeof(float));
   name = "GPU:" + std::to_string(device_id);
   float minusone = -1;
   CUDA_CHECK(cudaMemcpyAsync(kSCALAR_MINUSONE, &minusone, sizeof(float), cudaMemcpyHostToDevice));
@@ -110,14 +111,14 @@ Device_GPU::Device_GPU(int my_id, const DeviceMempoolSizes & mbs,
   CUDA_CHECK(cudaMemcpyAsync(kSCALAR_ZERO, &zero, sizeof(float), cudaMemcpyHostToDevice));
 
   // Initialize the Eigen device
-  estream = new Eigen::CudaStreamDevice(device_id);
-  edevice = new Eigen::GpuDevice(estream);
+  estream = DBG_NEW Eigen::CudaStreamDevice(device_id);
+  edevice = DBG_NEW Eigen::GpuDevice(estream);
 
   // this is the big memory allocation.
-  pools[0] = new AlignedMemoryPool("GPU forward memory", (mbs.used[0] << 20), &gpu_mem);
-  pools[1] = new AlignedMemoryPool("GPU backward memory", (mbs.used[1] << 20), &gpu_mem);
-  pools[2] = new AlignedMemoryPool("GPU parameter memory", (mbs.used[2] << 20), &gpu_mem);
-  pools[3] = new AlignedMemoryPool("GPU scratch memory", (mbs.used[3] << 20), &gpu_mem);
+  pools[0] = DBG_NEW AlignedMemoryPool("GPU forward memory", (mbs.used[0] << 20), &gpu_mem);
+  pools[1] = DBG_NEW AlignedMemoryPool("GPU backward memory", (mbs.used[1] << 20), &gpu_mem);
+  pools[2] = DBG_NEW AlignedMemoryPool("GPU parameter memory", (mbs.used[2] << 20), &gpu_mem);
+  pools[3] = DBG_NEW AlignedMemoryPool("GPU scratch memory", (mbs.used[3] << 20), &gpu_mem);
 }
 
 Device_GPU::~Device_GPU() {}
@@ -132,7 +133,7 @@ void Device_GPU::reset_rng(unsigned seed) {
 
 Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared) :
     Device(my_id, DeviceType::CPU, &cpu_mem), shmem(mem), shared(shared) {
-  if (shared) shmem = new SharedAllocator();
+  if (shared) shmem = DBG_NEW SharedAllocator();
   kSCALAR_MINUSONE = (float*) shmem->mymalloc(sizeof(float));
   *kSCALAR_MINUSONE = -1;
   kSCALAR_ONE = (float*) shmem->mymalloc(sizeof(float));
@@ -142,13 +143,13 @@ Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared) :
   name = "CPU";
 
   // Initialize the Eigen device
-  edevice = new Eigen::DefaultDevice;
+  edevice = DBG_NEW Eigen::DefaultDevice;
 
   // this is the big memory allocation.
-  pools[0] = new AlignedMemoryPool("CPU forward memory", (mbs.used[0] << 20), &cpu_mem);
-  pools[1] = new AlignedMemoryPool("CPU backward memory", (mbs.used[1] << 20), &cpu_mem);
-  pools[2] = new AlignedMemoryPool("CPU parameter memory", (mbs.used[2] << 20), shmem);
-  pools[3] = new AlignedMemoryPool("CPU scratch memory", (mbs.used[3] << 20), &cpu_mem);
+  pools[0] = DBG_NEW AlignedMemoryPool("CPU forward memory", (mbs.used[0] << 20), &cpu_mem);
+  pools[1] = DBG_NEW AlignedMemoryPool("CPU backward memory", (mbs.used[1] << 20), &cpu_mem);
+  pools[2] = DBG_NEW AlignedMemoryPool("CPU parameter memory", (mbs.used[2] << 20), shmem);
+  pools[3] = DBG_NEW AlignedMemoryPool("CPU scratch memory", (mbs.used[3] << 20), &cpu_mem);
 }
 
 Device_CPU::~Device_CPU() {
@@ -195,11 +196,28 @@ Device* DeviceManager::get_global_device(const std::string & name) {
   return it->second;
 }
 
+static DeviceManager* device_manager = nullptr;
+static std::mutex device_manager_mutex;
+
+DeviceManager* set_device_manager() {
+  std::lock_guard<std::mutex> guard(device_manager_mutex);
+  device_manager = DBG_NEW DeviceManager;
+  return device_manager;
+}
+
+void reset_device_manager() {
+  std::lock_guard<std::mutex> guard(device_manager_mutex);
+  delete device_manager;
+  device_manager = nullptr;
+}
+
 DeviceManager* get_device_manager() {
-  // In C++11, initialization of function local static objects is
-  // thread safe.
+  // In C++11, initialization of function local static objects is thread safe.
   // See https://isocpp.org/wiki/faq/ctors#static-init-order-on-first-use
-  static auto device_manager = new DeviceManager;
+  // However, if it is set here, it can never be unset, which means it's difficult
+  // to do a complete cleanup and re-initialization, perhaps to demonstrate that
+  // there are no memory leaks or to change parameters.  Instead, explicitly
+  // guard the thing.
   return device_manager;
 }
 

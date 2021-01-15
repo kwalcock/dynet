@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/exec.h"
 
 #include <unordered_map>
@@ -502,7 +503,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
     // Allocate temporary memory for bookkeeping
     size_t temp_data_size = (uptop1) * 4 * sizeof(int) +
         (uptop1psig) * 2 * sizeof(float);
-    int* node2profid = (int*)malloc(temp_data_size); // mixed types, so no new[]
+    int* node2profid = (int*)MALLOC(temp_data_size); // mixed types, so no new[]
     memset(node2profid, 0, temp_data_size);
     // node2left[n] = how many arguments must still be evaluated for Node n
     // before it can be evaluated?
@@ -847,7 +848,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
             // 2.a) the inputs need to be concatenated, but are already in the
             // right order within a contiguous block of memory.
             // TODO: make this work completely
-            Tensor* my_xsi = new Tensor;
+            Tensor* my_xsi = DBG_NEW Tensor;
             my_xsi->device = node->device;
             my_xsi->mem_pool = DeviceMempool::FXS;
 

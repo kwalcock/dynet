@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/init.h"
 
 #include "dynet/aligned-mem-pool.h"
@@ -221,7 +222,7 @@ void initialize(DynetParams& params) {
     return;
   }
 
-  DeviceManager* device_manager = get_device_manager();
+  DeviceManager* device_manager = set_device_manager();
 
   // initialize CUDA
   vector<Device*> gpudevices;
@@ -262,9 +263,9 @@ void initialize(DynetParams& params) {
 
   Device *d;
   if (gpudevices.size()) {
-    d = new Device_CPU(device_manager->num_devices(), std::string("128"), params.shared_parameters);
+    d = DBG_NEW Device_CPU(device_manager->num_devices(), std::string("128"), params.shared_parameters);
   } else {
-    d = new Device_CPU(device_manager->num_devices(), params.mem_descriptor, params.shared_parameters);
+    d = DBG_NEW Device_CPU(device_manager->num_devices(), params.mem_descriptor, params.shared_parameters);
   }
   device_manager->add(d);
   default_device = device_manager->get(default_index);
@@ -290,7 +291,8 @@ void initialize(int& argc, char**& argv, bool shared_parameters) {
 
 void cleanup() {
   delete rndeng;
-  delete get_device_manager();
+  rndeng = nullptr;
+  reset_device_manager();
   default_device = nullptr;
 }
 

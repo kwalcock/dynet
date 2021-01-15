@@ -1,6 +1,8 @@
 #ifndef DYNET_MEM_H
 #define DYNET_MEM_H
 
+#include "dynet/mem_debug.h"
+
 #include <vector>
 
 namespace dynet {

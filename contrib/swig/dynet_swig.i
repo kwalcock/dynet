@@ -108,6 +108,7 @@
 #include "mem.h"
 #include "aligned-mem-pool.h"
 #include "devices.h"
+#include "mem_debug.h"
 %}
 
 //
@@ -230,6 +231,7 @@ class MemDebug {
 
   void debug();
   void leak();
+  void set_break(long index);
 };
 
 }

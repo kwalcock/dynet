@@ -1,6 +1,8 @@
 #ifndef DYNET_DEVICES_H
 #define DYNET_DEVICES_H
 
+#include "dynet/mem_debug.h"
+
 #include <unordered_map>
 #include <string>
 #include <exception>
@@ -100,6 +102,8 @@ class DeviceManager final {
 };
 
 DeviceManager* get_device_manager();
+DeviceManager* set_device_manager();
+void reset_device_manager();
 
 inline void show_pool_mem_info() {
   DeviceManager* device_manager = get_device_manager();
