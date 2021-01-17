@@ -266,17 +266,19 @@ ParameterCollectionStorage::ParameterCollectionStorage(float weight_decay_lambda
 }
 
 ParameterCollectionStorage::~ParameterCollectionStorage() {
-  if (gradient_norm_scratch)
+  if (gradient_norm_scratch) {
     device_manager->get_global_device("CPU")->mem->myfree(gradient_norm_scratch);
+    gradient_norm_scratch = nullptr;
+  }
 }
 
 void ParameterCollectionStorage::project_weights(float radius) {
-  static float* project_scratch = nullptr;
+  static float* project_scratch = nullptr; // This will never disappear then.  Needs to be done differently or else it leaks.
   auto scratch_size = all_params.size() * sizeof(float);
+  // kwa: This does not look threadsafe.
   if (project_scratch == nullptr || sizeof(project_scratch) < scratch_size) {
-    if (project_scratch != nullptr) {
-      default_device->mem->myfree(gradient_norm_scratch);
-    }
+    if (project_scratch != nullptr)
+      default_device->mem->myfree(project_scratch);
     project_scratch = (float *) default_device->mem->mymalloc(scratch_size);
   }
   int pi = 0;
@@ -835,10 +837,10 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
     Device *dev_k;
     DYNET_ASSERT(all_params.size() == (params.size() + lookup_params.size()),
                  "Unmatched parameter size");
-    if (params.size() && all_params[pi] == params[k1]) {
+    if (k1 < params.size() && all_params[pi] == params[k1]) {
       dev_k = params[k1]->device;
       ++k1;
-    } else if (lookup_params.size() && all_params[pi] == lookup_params[k2]) {
+    } else if (k2 < lookup_params.size() && all_params[pi] == lookup_params[k2]) {
       dev_k = lookup_params[k2]->device;
       ++k2;
     } else {
