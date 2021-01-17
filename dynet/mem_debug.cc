@@ -34,7 +34,7 @@ int callSetBreak(int index) {
 }
 
 #if defined(_DEBUG) && defined(_MSC_VER)
-int breakIndex = callSetBreak(5);
+int breakIndex = 0; // callSetBreak(5);
 #endif
 
 MemDebug::MemDebug(bool atExit) {
@@ -63,8 +63,8 @@ void MemDebug::leak() {
 #if defined(_DEBUG) && defined(_MSC_VER)
   // This guarantees a memory leak which when displayed at program termination
   // verifies that leak detection is active.
-  char* leak = (char*)MALLOC(20);
-  strcpy(leak, "Hello, memory leak!");
+  char* leak = (char*)MALLOC(15);
+  strcpy(leak, "No leaks here!");
 #endif
 }
 
