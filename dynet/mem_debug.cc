@@ -3,6 +3,7 @@
 #include <memory>
 
 #if !_WINDOWS
+#include <mcheck.h>
 #include <mm_malloc.h>
 #endif
 
@@ -44,7 +45,8 @@ int breakIndex = 0; // callSetBreak(5);
 #endif
 
 MemDebug::MemDebug(bool atExit) {
-#if defined(_DEBUG) && defined(_MSC_VER)
+#if defined(_DEBUG)
+#  if defined(_MSC_VER)
   // _CRTDBG_ALLOC_MEM_DF = Turn on debug allocation
   // _CRTDBG_LEAK_CHECK_DF = Leak check at program exit
   int flags = _CRTDBG_ALLOC_MEM_DF;
@@ -53,6 +55,9 @@ MemDebug::MemDebug(bool atExit) {
   _CrtSetDbgFlag(flags);
   _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG /*| _CRTDBG_MODE_WNDW*/);
   _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+#  else
+  mtrace();
+#  endif
 #endif
 }
 
