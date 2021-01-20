@@ -1,5 +1,10 @@
 #include "dynet/mem_debug.h"
 #include <iostream>
+#include <memory>
+
+#if !_WINDOWS
+#include <mm_malloc.h>
+#endif
 
 namespace dynet {
 
@@ -14,17 +19,18 @@ void debugMem(const char* file, int line) {
 }
 
 void* dbg_malloc(size_t size) {
-  if (size == 1) {
-    std::cerr << "Malloc with size of 1!" << std::endl;
-  }
   return malloc(size);
 }
 
 #if defined(_DEBUG) && defined(_MSC_VER)
-int get_client_block(const char* file, int line) {
+int dbg_client_block(const char* file, int line) {
   return _CLIENT_BLOCK;
 }
 #endif
+
+void* dbg_mm_malloc(size_t n, size_t align) {
+  return _mm_malloc(n, align);
+}
 
 MemDebug localMemDebug(true);
 
@@ -59,12 +65,29 @@ void MemDebug::debug() {
 #endif
 }
 
-void MemDebug::leak() {
+// These guarantee a memory leak which when displayed at program termination
+// verifies that leak detection is active.
+
+void MemDebug::leak_malloc() {
 #if defined(_DEBUG) && defined(_MSC_VER)
-  // This guarantees a memory leak which when displayed at program termination
-  // verifies that leak detection is active.
-  char* leak = (char*)MALLOC(15);
+  // This leak is via malloc.
+  char* leak = (char*)malloc(15);
   strcpy(leak, "No leaks here!");
+#endif
+}
+
+void MemDebug::leak_new() {
+#if defined(_DEBUG) && defined(_MSC_VER)
+  // This is via new.
+  std::string* leak = DBG_NEW std::string("No leaks there!");
+#endif
+}
+
+void MemDebug::leak_mm_malloc() {
+#if defined(_DEBUG) && defined(_MSC_VER)
+  // This is via mm_malloc.
+  char* leak = (char*)_mm_malloc(15, 4);
+  strcpy(leak, "Or anywhere!");
 #endif
 }
 
