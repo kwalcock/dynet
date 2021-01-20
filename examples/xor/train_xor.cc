@@ -76,7 +76,7 @@ int innerMain(int argc, char** argv) {
 
 int main(int argc, char** argv) {
   MemDebug myMemDebug;
-  myMemDebug.leak();
+  myMemDebug.leak_malloc();
   int retval = innerMain(argc, argv);
   cleanup();
   return retval;
