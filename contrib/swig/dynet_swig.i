@@ -230,7 +230,9 @@ class MemDebug {
   ~MemDebug();
 
   void debug();
-  void leak();
+  void leak_malloc();
+  void leak_new();
+  void leak_mm_malloc();
   void set_break(long index);
 };
 
