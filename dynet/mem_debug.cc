@@ -80,7 +80,7 @@ void MemDebug::leak_malloc() {
 }
 
 void MemDebug::leak_new() {
-  std::string* leak = DBG_NEW std::string("No leaks there!");
+  std::string* leak = NEW std::string("No leaks there!");
 }
 
 void MemDebug::leak_mm_malloc() {

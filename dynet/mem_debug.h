@@ -49,9 +49,9 @@ class MemDebug {
    // Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
    // allocations to be of _CLIENT_BLOCK type.
 #  define CLIENT_BLOCK(file, line) dbg_client_block(file, line)
-#  define DBG_NEW new (CLIENT_BLOCK(__FILE__, __LINE__), __FILE__, __LINE__)
+#  define NEW new (CLIENT_BLOCK(__FILE__, __LINE__), __FILE__, __LINE__)
 #else
-#  define DBG_NEW new
+#  define NEW new
 #endif
 
 } // namespace dynet

@@ -111,14 +111,14 @@ Device_GPU::Device_GPU(int my_id, const DeviceMempoolSizes & mbs,
   CUDA_CHECK(cudaMemcpyAsync(kSCALAR_ZERO, &zero, sizeof(float), cudaMemcpyHostToDevice));
 
   // Initialize the Eigen device
-  estream = DBG_NEW Eigen::CudaStreamDevice(device_id);
-  edevice = DBG_NEW Eigen::GpuDevice(estream);
+  estream = NEW Eigen::CudaStreamDevice(device_id);
+  edevice = NEW Eigen::GpuDevice(estream);
 
   // this is the big memory allocation.
-  pools[0] = DBG_NEW AlignedMemoryPool("GPU forward memory", (mbs.used[0] << 20), &gpu_mem);
-  pools[1] = DBG_NEW AlignedMemoryPool("GPU backward memory", (mbs.used[1] << 20), &gpu_mem);
-  pools[2] = DBG_NEW AlignedMemoryPool("GPU parameter memory", (mbs.used[2] << 20), &gpu_mem);
-  pools[3] = DBG_NEW AlignedMemoryPool("GPU scratch memory", (mbs.used[3] << 20), &gpu_mem);
+  pools[0] = NEW AlignedMemoryPool("GPU forward memory", (mbs.used[0] << 20), &gpu_mem);
+  pools[1] = NEW AlignedMemoryPool("GPU backward memory", (mbs.used[1] << 20), &gpu_mem);
+  pools[2] = NEW AlignedMemoryPool("GPU parameter memory", (mbs.used[2] << 20), &gpu_mem);
+  pools[3] = NEW AlignedMemoryPool("GPU scratch memory", (mbs.used[3] << 20), &gpu_mem);
 }
 
 Device_GPU::~Device_GPU() {}
@@ -133,7 +133,7 @@ void Device_GPU::reset_rng(unsigned seed) {
 
 Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared) :
     Device(my_id, DeviceType::CPU, &cpu_mem), shmem(mem), shared(shared) {
-  if (shared) shmem = DBG_NEW SharedAllocator();
+  if (shared) shmem = NEW SharedAllocator();
   kSCALAR_MINUSONE = (float*) shmem->mymalloc(sizeof(float));
   *kSCALAR_MINUSONE = -1;
   kSCALAR_ONE = (float*) shmem->mymalloc(sizeof(float));
@@ -143,13 +143,13 @@ Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared) :
   name = "CPU";
 
   // Initialize the Eigen device
-  edevice = DBG_NEW Eigen::DefaultDevice;
+  edevice = NEW Eigen::DefaultDevice;
 
   // this is the big memory allocation.
-  pools[0] = DBG_NEW AlignedMemoryPool("CPU forward memory", (mbs.used[0] << 20), &cpu_mem);
-  pools[1] = DBG_NEW AlignedMemoryPool("CPU backward memory", (mbs.used[1] << 20), &cpu_mem);
-  pools[2] = DBG_NEW AlignedMemoryPool("CPU parameter memory", (mbs.used[2] << 20), shmem);
-  pools[3] = DBG_NEW AlignedMemoryPool("CPU scratch memory", (mbs.used[3] << 20), &cpu_mem);
+  pools[0] = NEW AlignedMemoryPool("CPU forward memory", (mbs.used[0] << 20), &cpu_mem);
+  pools[1] = NEW AlignedMemoryPool("CPU backward memory", (mbs.used[1] << 20), &cpu_mem);
+  pools[2] = NEW AlignedMemoryPool("CPU parameter memory", (mbs.used[2] << 20), shmem);
+  pools[3] = NEW AlignedMemoryPool("CPU scratch memory", (mbs.used[3] << 20), &cpu_mem);
 }
 
 Device_CPU::~Device_CPU() {
@@ -201,7 +201,7 @@ static std::mutex device_manager_mutex;
 
 DeviceManager* set_device_manager() {
   std::lock_guard<std::mutex> guard(device_manager_mutex);
-  device_manager = DBG_NEW DeviceManager;
+  device_manager = NEW DeviceManager;
   return device_manager;
 }
 

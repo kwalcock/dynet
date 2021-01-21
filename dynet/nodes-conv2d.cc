@@ -170,7 +170,7 @@ void Conv2D::backward_dev_impl(const MyDevice & dev,
 #ifdef __CUDACC__
 #if HAVE_CUDNN
   if (cudnn_conv_op_ == NULL)
-    cudnn_conv_op_ = DBG_NEW CudnnConvOp(stride, is_valid);
+    cudnn_conv_op_ = NEW CudnnConvOp(stride, is_valid);
   cudnn_conv_op_->backward_impl(dev, xs, fx, dEdf, i, dEdxi);
 #else
   throw std::runtime_error("Conv2D::backward_dev_impl not supported without CUDNN");

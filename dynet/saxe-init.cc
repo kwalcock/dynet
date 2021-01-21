@@ -16,7 +16,7 @@ namespace dynet {
 void orthonormal_random(unsigned dd, float g, Tensor& x) {
   Tensor t;
   t.d = Dim({dd, dd});
-  t.v = DBG_NEW float[dd * dd];
+  t.v = NEW float[dd * dd];
   normal_distribution<float> distribution(0, 0.01);
   auto b = [&] () {return distribution(*rndeng);};
   generate(t.v, t.v + dd*dd, b);

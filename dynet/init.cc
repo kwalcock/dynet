@@ -263,9 +263,9 @@ void initialize(DynetParams& params) {
 
   Device *d;
   if (gpudevices.size()) {
-    d = DBG_NEW Device_CPU(device_manager->num_devices(), std::string("128"), params.shared_parameters);
+    d = NEW Device_CPU(device_manager->num_devices(), std::string("128"), params.shared_parameters);
   } else {
-    d = DBG_NEW Device_CPU(device_manager->num_devices(), params.mem_descriptor, params.shared_parameters);
+    d = NEW Device_CPU(device_manager->num_devices(), params.mem_descriptor, params.shared_parameters);
   }
   device_manager->add(d);
   default_device = device_manager->get(default_index);

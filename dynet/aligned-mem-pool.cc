@@ -26,7 +26,7 @@ void InternalMemoryPool::sys_alloc(size_t cap) {
 
 AlignedMemoryPool::AlignedMemoryPool(const std::string &name, size_t initial_cap, MemAllocator *a, size_t expanding_unit) : name(name), cap(initial_cap), current(0), a(a), expanding_unit(expanding_unit) {
   DYNET_ARG_CHECK(cap > 0, "Attempt to allocate memory of size 0 in AlignedMemoryPool");
-  pools.push_back(DBG_NEW InternalMemoryPool(name, cap, a));
+  pools.push_back(NEW InternalMemoryPool(name, cap, a));
 }
 AlignedMemoryPool::~AlignedMemoryPool() {
   for ( auto p : pools) { delete p; }
@@ -37,7 +37,7 @@ void* AlignedMemoryPool::allocate(size_t n) {
   if (res == 0) {
     // round up to the nearest multiple of expanding_unit
     size_t new_pool_size  = (n + expanding_unit-1) / expanding_unit * expanding_unit;
-    pools.push_back(DBG_NEW InternalMemoryPool(name, new_pool_size, a));
+    pools.push_back(NEW InternalMemoryPool(name, new_pool_size, a));
     cap += new_pool_size;
     current++;
     res = pools[current]->allocate(n);
@@ -50,7 +50,7 @@ void AlignedMemoryPool::myfree() {
   if (current > 0) {
     for (auto p : pools) { delete p; }
     pools.clear();
-    pools.push_back(DBG_NEW InternalMemoryPool(name, cap, a));
+    pools.push_back(NEW InternalMemoryPool(name, cap, a));
     current = 0;
   }
   pools[0]->myfree();

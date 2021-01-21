@@ -848,7 +848,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
             // 2.a) the inputs need to be concatenated, but are already in the
             // right order within a contiguous block of memory.
             // TODO: make this work completely
-            Tensor* my_xsi = DBG_NEW Tensor;
+            Tensor* my_xsi = NEW Tensor;
             my_xsi->device = node->device;
             my_xsi->mem_pool = DeviceMempool::FXS;
 

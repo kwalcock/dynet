@@ -57,7 +57,7 @@ Loader::~Loader() {}
 
 TextFileSaver::TextFileSaver(const std::string & filename, bool append) :
         p_datastream(
-            DBG_NEW std::ofstream(
+            NEW std::ofstream(
                 filename.c_str(),
                 (append ? std::ios_base::app : std::ios_base::out) | std::ios_base::binary)),
         datastream(*p_datastream) {
