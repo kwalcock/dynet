@@ -28,7 +28,7 @@ MemAllocator::~MemAllocator() {}
 
 void* CPUAllocator::mymalloc(size_t n) {
 //    void* ptr = _mm_malloc(n, align);
-  void* ptr = DBG_MM_MALLOC(n, align);
+  void* ptr = MM_MALLOC(n, align);
   if (!ptr) {
     show_pool_mem_info();
     cerr << "CPU memory allocation failed n=" << n << " align=" << align << endl;

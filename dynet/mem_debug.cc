@@ -9,7 +9,19 @@
 
 namespace dynet {
 
-void debugMem(const char* file, int line) {
+void* dbg_malloc(size_t size) {
+  return malloc(size);
+}
+
+void* dbg_mm_malloc(size_t n, size_t align) {
+  return _mm_malloc(n, align);
+}
+
+void dbg_free(void* ptr) {
+  free(ptr)
+}
+
+void dbg_mem(const char* file, int line) {
 #ifdef _MSC_VER
   int leaksFound = _CrtDumpMemoryLeaks();
   if (leaksFound)
@@ -19,30 +31,21 @@ void debugMem(const char* file, int line) {
 #endif
 }
 
-void* dbg_malloc(size_t size) {
-  return malloc(size);
-}
-
-#if defined(_DEBUG) && defined(_MSC_VER)
 int dbg_client_block(const char* file, int line) {
+#if defined(_DEBUG) && defined(_MSC_VER)
   return _CLIENT_BLOCK;
-}
+#else
+  return 0;
 #endif
-
-void* dbg_mm_malloc(size_t n, size_t align) {
-  return _mm_malloc(n, align);
 }
-
-MemDebug localMemDebug(true);
 
 int callSetBreak(int index) {
-    localMemDebug.set_break(index);
-    return index;
-}
-
 #if defined(_DEBUG) && defined(_MSC_VER)
-int breakIndex = 0; // callSetBreak(5);
+  return _CrtSetBreakAlloc(index);
+#else
+  return index;
 #endif
+}
 
 MemDebug::MemDebug(bool atExit) {
 #if defined(_DEBUG)
@@ -65,41 +68,33 @@ MemDebug::~MemDebug() {
 }
 
 void MemDebug::debug() {
-#if defined(_DEBUG) && defined(_MSC_VER)
-  debugMem(__FILE__, __LINE__);
-#endif
+  dbg_mem(__FILE__, __LINE__);
 }
 
 // These guarantee a memory leak which when displayed at program termination
 // verifies that leak detection is active.
 
 void MemDebug::leak_malloc() {
-#if defined(_DEBUG) && defined(_MSC_VER)
-  // This leak is via malloc.
-  char* leak = (char*)malloc(15);
+  char* leak = (char*)MALLOC(15);
   strcpy(leak, "No leaks here!");
-#endif
 }
 
 void MemDebug::leak_new() {
-#if defined(_DEBUG) && defined(_MSC_VER)
-  // This is via new.
   std::string* leak = DBG_NEW std::string("No leaks there!");
-#endif
 }
 
 void MemDebug::leak_mm_malloc() {
-#if defined(_DEBUG) && defined(_MSC_VER)
-  // This is via mm_malloc.
-  char* leak = (char*)_mm_malloc(15, 4);
+  char* leak = (char*)MM_MALLOC(15, 4);
   strcpy(leak, "Or anywhere!");
-#endif
 }
 
 void MemDebug::set_break(long index) {
-#if defined(_DEBUG) && defined(_MSC_VER)
-  _CrtSetBreakAlloc(index);
-#endif
+  callSetBreak(index);
 }
+
+#if defined(_DEBUG) && defined(_MSC_VER)
+MemDebug localMemDebug(true);
+int breakIndex = 0; // callSetBreak(303);
+#endif
 
 } // namespace dynet

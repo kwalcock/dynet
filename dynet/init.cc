@@ -297,6 +297,7 @@ void cleanup() {
 }
 
 void reset_rng(unsigned seed) {
+  delete rndeng;
   rndeng = new mt19937(seed);
 #if HAVE_CUDA
   DeviceManager* device_manager = get_device_manager();

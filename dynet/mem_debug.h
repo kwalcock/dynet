@@ -15,10 +15,12 @@
 
 namespace dynet {
 
-void debugMem(const char* file, int line);
-
 void* dbg_malloc(size_t size);
 void* dbg_mm_malloc(size_t size, size_t align);
+void dbg_free(void* ptr);
+
+void dbg_mem(const char* file, int line);
+int dbg_client_block(const char* file, int line);
 
 class MemDebug {
  public:
@@ -35,27 +37,23 @@ class MemDebug {
 
 #if defined(_DEBUG)
 #  define MALLOC(x) dbg_malloc(x)
-#  if defined(_MSC_VER)
-int dbg_client_block(const char* file, int line);
-#  endif
+#  define MM_MALLOC(n, align) dbg_mm_malloc(n, align)
+#  define FREE(x) dbg_free(x)
 #else
 #  define MALLOC(x) malloc(x)
+#  define MM_MALLOC(n, align) _mm_malloc(n, align)
+#  define FREE(x) free(x)
 #endif
 
 #if defined(_DEBUG) && defined(_MSC_VER)
    // Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
    // allocations to be of _CLIENT_BLOCK type.
-#  define DBG_CLIENT_BLOCK(file, line) dbg_client_block(file, line)
-#  define DBG_NEW new (DBG_CLIENT_BLOCK(__FILE__, __LINE__), __FILE__, __LINE__)
+#  define CLIENT_BLOCK(file, line) dbg_client_block(file, line)
+#  define DBG_NEW new (CLIENT_BLOCK(__FILE__, __LINE__), __FILE__, __LINE__)
 #else
 #  define DBG_NEW new
 #endif
 
-#ifdef _DEBUG
-#  define DBG_MM_MALLOC(n, align) dbg_mm_malloc(n, align)
-#else
-#  define DBG_MM_MALLOC(n, align) _mm_malloc(n, align)
-#endif
 } // namespace dynet
 
 #endif
