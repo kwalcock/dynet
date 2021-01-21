@@ -18,7 +18,7 @@ void* dbg_mm_malloc(size_t n, size_t align) {
 }
 
 void dbg_free(void* ptr) {
-  free(ptr)
+  free(ptr);
 }
 
 void dbg_mem(const char* file, int line) {
