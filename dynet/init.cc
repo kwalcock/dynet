@@ -290,14 +290,14 @@ void initialize(int& argc, char**& argv, bool shared_parameters) {
 }
 
 void cleanup() {
-  delete rndeng;
+  DEL rndeng;
   rndeng = nullptr;
   reset_device_manager();
   default_device = nullptr;
 }
 
 void reset_rng(unsigned seed) {
-  delete rndeng;
+  DEL rndeng;
   rndeng = new mt19937(seed);
 #if HAVE_CUDA
   DeviceManager* device_manager = get_device_manager();

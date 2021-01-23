@@ -245,7 +245,7 @@ void TensorTools::identity(Tensor& val) {
         t[pos++] = (i == j ? 1 : 0);
     CUDA_CHECK(cudaSetDevice(((Device_GPU*)val.device)->cuda_device_id));
     CUDA_CHECK(cudaMemcpy(val.v, t, sizeof(real) * val.d.size(), cudaMemcpyHostToDevice));
-    delete[] t;
+    DEL_ARR(t);
 #endif
   } else { throw std::runtime_error("Bad device type"); }
 }

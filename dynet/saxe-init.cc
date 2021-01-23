@@ -22,7 +22,7 @@ void orthonormal_random(unsigned dd, float g, Tensor& x) {
   generate(t.v, t.v + dd*dd, b);
   Eigen::JacobiSVD<Eigen::MatrixXf> svd(mat(t), Eigen::ComputeFullU);
   mat(x) = svd.matrixU();
-  delete[] t.v;
+  DEL_ARR(t.v);
 }
 
 }

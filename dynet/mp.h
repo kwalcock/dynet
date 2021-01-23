@@ -1,4 +1,5 @@
 #pragma once
+#include "dynet/mem_debug.h"
 #if !_WINDOWS
 #include "dynet/globals.h"
 #include "dynet/dynet.h"
@@ -235,7 +236,7 @@ namespace dynet {
         }
         catch (boost::interprocess::interprocess_exception e) {
           if (mq != nullptr) {
-            delete mq;
+            DEL mq;
             mq = nullptr;
           }
         }

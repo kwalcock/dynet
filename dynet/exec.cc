@@ -465,11 +465,11 @@ const Tensor& BatchedExecutionEngine::incremental_forward() {
 void BatchedExecutionEngine::garbage_collect() {
   // free any old memory if this is a new CG
   for (auto & batch : batches) {
-    delete batch.pseudo_node;  // may be nullptr, but that's allowed
+    DEL batch.pseudo_node;  // may be nullptr, but that's allowed
     batch.pseudo_node = nullptr;
     for (size_t i = 0; i < batch.arg_nfxs.size(); ++i) {
       if (batch.concat[i] != 0) {
-        delete batch.arg_nfxs[i];
+        DEL batch.arg_nfxs[i];
         batch.arg_nfxs[i] = nullptr;
       }
     }

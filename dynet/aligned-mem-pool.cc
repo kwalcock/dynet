@@ -29,7 +29,7 @@ AlignedMemoryPool::AlignedMemoryPool(const std::string &name, size_t initial_cap
   pools.push_back(NEW InternalMemoryPool(name, cap, a));
 }
 AlignedMemoryPool::~AlignedMemoryPool() {
-  for ( auto p : pools) { delete p; }
+  for ( auto p : pools) { DEL p; }
 }
 
 void* AlignedMemoryPool::allocate(size_t n) {
@@ -48,7 +48,7 @@ void* AlignedMemoryPool::allocate(size_t n) {
 
 void AlignedMemoryPool::myfree() {
   if (current > 0) {
-    for (auto p : pools) { delete p; }
+    for (auto p : pools) { DEL p; }
     pools.clear();
     pools.push_back(NEW InternalMemoryPool(name, cap, a));
     current = 0;

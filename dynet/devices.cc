@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/devices.h"
 
 #include <iostream>
@@ -158,16 +159,16 @@ Device_CPU::~Device_CPU() {
 
 void Device_CPU::clear() {
 
-  for (AlignedMemoryPool* pool : pools) delete pool;
+  for (AlignedMemoryPool* pool : pools) DEL pool;
   pools.clear();
 
-  delete edevice;
+  DEL edevice;
 
   shmem->myfree(kSCALAR_ONE);
   shmem->myfree(kSCALAR_ZERO);
   shmem->myfree(kSCALAR_MINUSONE);
 
-  if (shared) delete shmem;
+  if (shared) DEL shmem;
 }
 
 DeviceManager::DeviceManager() {}
@@ -177,7 +178,7 @@ DeviceManager::~DeviceManager() {
 }
 
 void DeviceManager::clear() {
-  for (Device* device : devices) delete device;
+  for (Device* device : devices) DEL device;
   devices.clear();
 }
 
@@ -207,7 +208,7 @@ DeviceManager* set_device_manager() {
 
 void reset_device_manager() {
   std::lock_guard<std::mutex> guard(device_manager_mutex);
-  delete device_manager;
+  DEL device_manager;
   device_manager = nullptr;
 }
 
