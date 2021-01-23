@@ -9,30 +9,6 @@
 
 namespace dynet {
 
-void* dbg_dynet_malloc(size_t size) {
-  return malloc(size);
-}
-
-template<typename T>
-void dbg_dynet_free(T** ptr) {
-  if (*ptr) {
-    free(*ptr);
-    *ptr = nullptr;
-  }
-}
-
-void* dbg_dynet_mm_malloc(size_t n, size_t align) {
-  return _mm_malloc(n, align);
-}
-
-template<typename T>
-void dbg_dynet_mm_free(T** ptr) {
-  if (*ptr) {
-    _mm_free(*ptr);
-    *ptr = nullptr;
-  }
-}
-
 void dbg_mem(const char* file, int line) {
 #ifdef _MSC_VER
   int leaksFound = _CrtDumpMemoryLeaks();
