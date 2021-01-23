@@ -157,9 +157,9 @@ namespace dynet {
       graph_id = cgTracker.inc_active_count();
     }
     if (batched)
-      ee.reset(NEW BatchedExecutionEngine(*this));
+      ee.reset(DYNET_NEW(BatchedExecutionEngine(*this)));
     else
-      ee.reset(NEW SimpleExecutionEngine(*this));
+      ee.reset(DYNET_NEW(SimpleExecutionEngine(*this)));
     immediate_compute = false;
     check_validity = false;
   }
@@ -186,7 +186,7 @@ namespace dynet {
     for (auto n : nodes) {
       // Make sure we never use a stale ComputationGraph.
       n->set_cg(nullptr);
-      DEL n;
+      DYNET_DEL(n);
     }
     nodes.clear();
     ee->invalidate();
@@ -214,7 +214,7 @@ namespace dynet {
     // clear all nodes at position >= p.node_idx
     if ((int)nodes.size() > p.node_idx) {
       for (int i = p.node_idx; i < (int)nodes.size(); i++)
-        DEL nodes[i]; // the deletion of nodes.
+        DYNET_DEL(nodes[i]); // the deletion of nodes.
       nodes.resize(p.node_idx);
       ee->invalidate(p.node_idx - 1); // clear precomputed forward values
     }
@@ -247,28 +247,28 @@ namespace dynet {
   }
 
   VariableIndex ComputationGraph::add_input(real s, Device *device) {
-    ScalarInputNode* new_node = NEW ScalarInputNode(s);
+    ScalarInputNode* new_node = DYNET_NEW(ScalarInputNode(s));
     return add_node(new_node, device);
   }
 
   VariableIndex ComputationGraph::add_input(const real* ps, Device *device) {
-    ScalarInputNode* new_node = NEW ScalarInputNode(ps);
+    ScalarInputNode* new_node = DYNET_NEW(ScalarInputNode(ps));
     return add_node(new_node, device);
   }
 
   VariableIndex ComputationGraph::add_input(const Dim& d, const std::vector<float>& pm, Device *device) {
-    InputNode* new_node = NEW InputNode(d, pm);
+    InputNode* new_node = DYNET_NEW(InputNode(d, pm));
     return add_node(new_node, device);
   }
 
   VariableIndex ComputationGraph::add_input(const Dim& d, const std::vector<float>* pm, Device *device) {
-    InputNode* new_node = NEW InputNode(d, pm);
+    InputNode* new_node = DYNET_NEW(InputNode(d, pm));
     return add_node(new_node, device);
   }
 
   VariableIndex ComputationGraph::add_input(const Dim& d, const std::vector<unsigned int>& ids,
     const std::vector<float>& data, Device *device, float defdata) {
-    SparseInputNode* new_node = NEW SparseInputNode(d, ids, data, defdata);
+    SparseInputNode* new_node = DYNET_NEW(SparseInputNode(d, ids, data, defdata));
     return add_node(new_node, device);
   }
 
@@ -279,63 +279,63 @@ namespace dynet {
   }
 
   VariableIndex ComputationGraph::add_parameters(Parameter p) {
-    ParameterNode* new_node = NEW ParameterNode(p);
+    ParameterNode* new_node = DYNET_NEW(ParameterNode(p));
     return add_parameter_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_parameters(LookupParameter p) {
-    ParameterNode* new_node = NEW ParameterNode(p);
+    ParameterNode* new_node = DYNET_NEW(ParameterNode(p));
     return add_parameter_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_const_parameters(Parameter p) {
-    ConstParameterNode* new_node = NEW ConstParameterNode(p);
+    ConstParameterNode* new_node = DYNET_NEW(ConstParameterNode(p));
     return add_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_const_parameters(LookupParameter p) {
-    ConstParameterNode* new_node = NEW ConstParameterNode(p);
+    ConstParameterNode* new_node = DYNET_NEW(ConstParameterNode(p));
     return add_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_lookup(LookupParameter p, const unsigned* pindex) {
-    LookupNode* new_node = NEW LookupNode(p, pindex);
+    LookupNode* new_node = DYNET_NEW(LookupNode(p, pindex));
     return add_parameter_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_lookup(LookupParameter p, unsigned index) {
-    LookupNode* new_node = NEW LookupNode(p, index);
+    LookupNode* new_node = DYNET_NEW(LookupNode(p, index));
     return add_parameter_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_lookup(LookupParameter p, const std::vector<unsigned>& indices) {
-    LookupNode* new_node = NEW LookupNode(p, indices);
+    LookupNode* new_node = DYNET_NEW(LookupNode(p, indices));
     return add_parameter_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_lookup(LookupParameter p, const std::vector<unsigned>* indices) {
-    LookupNode* new_node = NEW LookupNode(p, indices);
+    LookupNode* new_node = DYNET_NEW(LookupNode(p, indices));
     return add_parameter_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_const_lookup(LookupParameter p, const unsigned* pindex) {
     // Get rid of the following in favor of using parameter_nodes to see the needs_derivative expression.
-    LookupNode* new_node = NEW LookupNode(p, pindex);
+    LookupNode* new_node = DYNET_NEW(LookupNode(p, pindex));
     return add_parameter_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_const_lookup(LookupParameter p, unsigned index) {
-    LookupNode* new_node = NEW LookupNode(p, index);
+    LookupNode* new_node = DYNET_NEW(LookupNode(p, index));
     return add_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_const_lookup(LookupParameter p, const std::vector<unsigned>& indices) {
-    LookupNode* new_node = NEW LookupNode(p, indices);
+    LookupNode* new_node = DYNET_NEW(LookupNode(p, indices));
     return add_node(new_node, p.get_storage().device);
   }
 
   VariableIndex ComputationGraph::add_const_lookup(LookupParameter p, const std::vector<unsigned>* indices) {
-    LookupNode* new_node = NEW LookupNode(p, indices);
+    LookupNode* new_node = DYNET_NEW(LookupNode(p, indices));
     return add_node(new_node, p.get_storage().device);
   }
 

@@ -75,16 +75,16 @@ void MemDebug::debug() {
 // verifies that leak detection is active.
 
 void MemDebug::leak_malloc() {
-  char* leak = (char*)DYNET_MALLOC(15);
+  char* leak = (char*) DYNET_MALLOC(15);
   strcpy(leak, "No leaks here!");
 }
 
 void MemDebug::leak_new() {
-  std::string* leak = NEW std::string("No leaks there!");
+  std::string* leak = DYNET_NEW(std::string("No leaks there!"));
 }
 
 void MemDebug::leak_mm_malloc() {
-  char* leak = (char*)DYNET_MM_MALLOC(15, 4);
+  char* leak = (char*) DYNET_MM_MALLOC(15, 4);
   strcpy(leak, "Or anywhere!");
 }
 

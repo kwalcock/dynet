@@ -6,6 +6,8 @@
 #ifndef DYNET_DYNET_H_
 #define DYNET_DYNET_H_
 
+#include "mem_debug.h"
+
 #include <initializer_list>
 #include <iostream>
 #include <memory>
@@ -771,7 +773,7 @@ struct Node {
 template <class Function>
 inline VariableIndex ComputationGraph::add_function(
     const std::initializer_list<VariableIndex>& arguments) {
-  return add_function_node(new Function(arguments));
+  return add_function_node(DYNET_NEW(Function(arguments)));
 }
 
 // pass side information to the function. these are likely to be
@@ -781,12 +783,12 @@ inline VariableIndex ComputationGraph::add_function(
     const std::initializer_list<VariableIndex>& arguments,
     Args&&... side_information) {
   return add_function_node(
-      new Function(arguments, std::forward<Args>(side_information)...));
+      DYNET_NEW(Function(arguments, std::forward<Args>(side_information)...)));
 }
 
 template <class Function, typename T>
 inline VariableIndex ComputationGraph::add_function(const T& arguments) {
-  return add_function_node(new Function(arguments));
+  return add_function_node(DYNET_NEW(Function(arguments)));
 }
 
 // pass side information to the function. these are likely to be
@@ -795,7 +797,7 @@ template <class Function, typename T, typename... Args>
 inline VariableIndex ComputationGraph::add_function(
     const T& arguments, Args&&... side_information) {
   return add_function_node(
-      new Function(arguments, std::forward<Args>(side_information)...));
+      DYNET_NEW(Function(arguments, std::forward<Args>(side_information)...)));
 }
 
 }  // namespace dynet

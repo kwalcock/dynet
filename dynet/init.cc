@@ -263,9 +263,9 @@ void initialize(DynetParams& params) {
 
   Device *d;
   if (gpudevices.size()) {
-    d = NEW Device_CPU(device_manager->num_devices(), std::string("128"), params.shared_parameters);
+    d = DYNET_NEW(Device_CPU(device_manager->num_devices(), std::string("128"), params.shared_parameters));
   } else {
-    d = NEW Device_CPU(device_manager->num_devices(), params.mem_descriptor, params.shared_parameters);
+    d = DYNET_NEW(Device_CPU(device_manager->num_devices(), params.mem_descriptor, params.shared_parameters));
   }
   device_manager->add(d);
   default_device = device_manager->get(default_index);
@@ -290,15 +290,15 @@ void initialize(int& argc, char**& argv, bool shared_parameters) {
 }
 
 void cleanup() {
-  DEL rndeng;
+  DYNET_DEL(rndeng);
   rndeng = nullptr;
   reset_device_manager();
   default_device = nullptr;
 }
 
 void reset_rng(unsigned seed) {
-  DEL rndeng;
-  rndeng = new mt19937(seed);
+  DYNET_DEL(rndeng);
+  rndeng = DYNET_NEW(mt19937(seed));
 #if HAVE_CUDA
   DeviceManager* device_manager = get_device_manager();
   for (unsigned device_id=0; device_id < device_manager->num_devices(); device_id++){

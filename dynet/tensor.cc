@@ -239,7 +239,7 @@ void TensorTools::identity(Tensor& val) {
         val.v[pos++] = (i == j ? 1 : 0);
 #if HAVE_CUDA
   } else if (val.device->type == DeviceType::GPU) {
-    float* t = NEW float[val.d.size()];
+    float* t = DYNET_NEW_ARR(float[val.d.size()]);
     for (size_t i = 0; i < val.d[0]; ++i)
       for (size_t j = 0; j < val.d[1]; ++j)
         t[pos++] = (i == j ? 1 : 0);
@@ -305,7 +305,7 @@ void TensorTools::randomize_orthonormal(Tensor& val, real scale) {
   } else if (val.device->type == DeviceType::GPU) {
     DYNET_NO_CUDA_IMPL_ERROR("Orthonormal initialization");
     // TODO: The following should work, but for some reason it isn't working
-    // float* t = new float[val.d.size()];
+    // float* t = DYNET_NEW_ARR(float[val.d.size()]);
     // Tensor tt(val);
     // tt.v = t;
     // randomize_uniform(tt, -1.0, 1.0);
@@ -313,7 +313,7 @@ void TensorTools::randomize_orthonormal(Tensor& val, real scale) {
     // *tt = scale * svd.matrixU();
     // CUDA_CHECK(cudaSetDevice(v.device->cuda_device_id));
     // CUDA_CHECK(cudaMemcpy(val.v, tt.v, sizeof(real) * val.d.size(), cudaMemcpyHostToDevice));
-    // delete[] t;
+    // DYNET_DEL_ARR(t);
 #endif
   } else { throw std::runtime_error("Bad device type"); }
 }

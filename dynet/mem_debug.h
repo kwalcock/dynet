@@ -33,11 +33,11 @@ class MemDebug {
 
 // C-style memory management
 #if defined(_DEBUG)
-#  define MALLOC(x) dbg_malloc(x)
+#  define DYNET_MALLOC(x) dbg_malloc(x)
 #  define DYNET_MM_MALLOC(n, align) dbg_mm_malloc(n, align)
 #  define DYNET_FREE(x) dbg_free(x)
 #else
-#  define MALLOC(x) malloc(x)
+#  define DYNET_MALLOC(x) malloc(x)
 #  define DYNET_MM_MALLOC(n, align) _mm_malloc(n, align)
 #  define DYNET_FREE(x) free(x)
 #endif
@@ -47,13 +47,15 @@ class MemDebug {
    // Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
    // allocations to be of _CLIENT_BLOCK type.
 #  define CLIENT_BLOCK(file, line) dbg_client_block(file, line)
-#  define NEW new (CLIENT_BLOCK(__FILE__, __LINE__), __FILE__, __LINE__)
-#  define DEL delete
-#  define DEL_ARR(x) delete[] x
+#  define DYNET_NEW(x) new (CLIENT_BLOCK(__FILE__, __LINE__), __FILE__, __LINE__) x
+#  define DYNET_NEW_ARR(x) DYNET_NEW(x)
+#  define DYNET_DEL(x) delete x
+#  define DYNET_DEL_ARR(x) delete[] x
 #else
-#  define NEW new
-#  define DEL delete
-#  define DEL_ARR(x) delete[] x
+#  define DYNET_NEW(x) new x
+#  define DYNET_NEW_ARR(x) DYNET_NEW(x)
+#  define DYNET_DEL(x) delete x
+#  define DYNET_DEL_ARR(x) delete[] x
 #endif
 
 } // namespace dynet

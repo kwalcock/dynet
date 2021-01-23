@@ -293,12 +293,12 @@ void ParameterCollectionStorage::project_weights(float radius) {
 }
 
 ParameterCollection::ParameterCollection() : name("/"),
-    storage(NEW ParameterCollectionStorage(default_weight_decay_lambda)),
+    storage(DYNET_NEW(ParameterCollectionStorage(default_weight_decay_lambda))),
     parent(nullptr) {
 }
 
 ParameterCollection::ParameterCollection(const string & my_name, ParameterCollection* my_parent, float weight_decay_lambda) :
-    name(my_name), storage(NEW ParameterCollectionStorage(weight_decay_lambda)), parent(my_parent) {
+    name(my_name), storage(DYNET_NEW(ParameterCollectionStorage(weight_decay_lambda))), parent(my_parent) {
 }
 
 ParameterCollection ParameterCollection::add_subcollection(const string & sub_name, float weight_decay_lambda) {
@@ -499,7 +499,7 @@ size_t ParameterCollection::updated_parameter_count() const {
 ParameterCollectionStorage& ParameterCollection::get_storage() {
   if(storage == nullptr) {
     if (parent == nullptr) {
-      ParameterCollectionStorage* pcs = NEW ParameterCollectionStorage(default_weight_decay_lambda);
+      ParameterCollectionStorage* pcs = DYNET_NEW(ParameterCollectionStorage(default_weight_decay_lambda));
       storage = shared_ptr<ParameterCollectionStorage>(pcs);
     }
     else
@@ -512,7 +512,7 @@ Cast away constness, call other function, cast result?
 const ParameterCollectionStorage& ParameterCollection::get_storage() const {
   if (storage == nullptr) {
     if (parent == nullptr) {
-      ParameterCollectionStorage* pcs = NEW ParameterCollectionStorage(default_weight_decay_lambda);
+      ParameterCollectionStorage* pcs = DYNET_NEW(ParameterCollectionStorage(default_weight_decay_lambda));
       storage = make_shared<ParameterCollectionStorage>(pcs);
     }
     else
