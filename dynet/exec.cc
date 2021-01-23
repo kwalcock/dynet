@@ -885,7 +885,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
       if (profiling_flag) { timer.stop(current_batch_name); }
     }
 
-    DYNET_FREE(node2profid);
+    DYNET_FREE(&node2profid);
   }
 
   // for(VariableIndex vi = (VariableIndex)0; vi <= upto; ++vi) cerr << "nfxs[" << vi << "] == " << print_vec(as_vector(get_nfx(vi))) << endl;

@@ -20,7 +20,7 @@ Expression::Expression(const Expression& other) {
 }
 
 Expression::~Expression() {
-  reset_ptr(pg);
+  pg = nullptr;
   i = 0;
 }
 

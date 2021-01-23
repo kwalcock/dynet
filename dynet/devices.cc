@@ -209,7 +209,6 @@ DeviceManager* set_device_manager() {
 void reset_device_manager() {
   std::lock_guard<std::mutex> guard(device_manager_mutex);
   DYNET_DEL(device_manager);
-  reset_ptr(device_manager);
 }
 
 DeviceManager* get_device_manager() {

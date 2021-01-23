@@ -38,10 +38,7 @@ void* CPUAllocator::mymalloc(size_t n) {
 }
 
 void CPUAllocator::myfree(void** mem) {
-  if (*mem) {
-    DYNET_MM_FREE(*mem);
-    *mem = nullptr;
-  }
+  DYNET_MM_FREE(mem);
 }
 
 void CPUAllocator::zero(void* p, size_t n) {

@@ -9,20 +9,28 @@
 
 namespace dynet {
 
-void* dbg_malloc(size_t size) {
+void* dbg_dynet_malloc(size_t size) {
   return malloc(size);
 }
 
-void dbg_free(void* ptr) {
-    free(ptr);
+template<typename T>
+void dbg_dynet_free(T** ptr) {
+  if (*ptr) {
+    free(*ptr);
+    *ptr = nullptr;
+  }
 }
 
-void* dbg_mm_malloc(size_t n, size_t align) {
+void* dbg_dynet_mm_malloc(size_t n, size_t align) {
   return _mm_malloc(n, align);
 }
 
-void dbg_mm_free(void* ptr) {
-    _mm_free(ptr);
+template<typename T>
+void dbg_dynet_mm_free(T** ptr) {
+  if (*ptr) {
+    _mm_free(*ptr);
+    *ptr = nullptr;
+  }
 }
 
 void dbg_mem(const char* file, int line) {
@@ -63,6 +71,11 @@ MemDebug::MemDebug(bool atExit) {
   _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG /*| _CRTDBG_MODE_WNDW*/);
   _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
 #  else
+  mtrace();
+#  endif
+#else
+#  if !defined(_MSC_VER)
+  // Use this even in production version for Linux.
   mtrace();
 #  endif
 #endif
