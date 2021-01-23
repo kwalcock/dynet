@@ -1,6 +1,12 @@
 #ifndef DYNET_MEM_DEBUG_H
 #define DYNET_MEM_DEBUG_H
 
+#if !_WINDOWS
+#  ifndef NDEBUG
+#    define _DEBUG 1
+#  endif
+#endif
+
 // See https://docs.microsoft.com/en-us/visualstudio/debugger/finding-memory-leaks-using-the-crt-library?view=vs-2019 .
 #ifdef _MSC_VER
 #  if defined(_DEBUG)
@@ -42,10 +48,29 @@ inline void dynet_mm_free(T** ptr) {
   }
 }
 
-void* dbg_dynet_malloc(size_t size);
-void dbg_dynet_free(void** ptr);
-void* dbg_dynet_mm_malloc(size_t size, size_t align);
-void dbg_dynet_mm_free(void** ptr);
+inline void* dbg_dynet_malloc(size_t size) {
+  return malloc(size);
+}
+
+template<typename T>
+inline void dbg_dynet_free(T** ptr) {
+  if (*ptr) {
+    free(*ptr);
+    *ptr = nullptr;
+  }
+}
+
+inline void* dbg_dynet_mm_malloc(size_t n, size_t align) {
+  return _mm_malloc(n, align);
+}
+
+template<typename T>
+inline void dbg_dynet_mm_free(T** ptr) {
+  if (*ptr) {
+    _mm_free(*ptr);
+    *ptr = nullptr;
+  }
+}
 
 void dbg_mem(const char* file, int line);
 int dbg_client_block(const char* file, int line);
