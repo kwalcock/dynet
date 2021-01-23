@@ -34,12 +34,12 @@ class MemDebug {
 // C-style memory management
 #if defined(_DEBUG)
 #  define MALLOC(x) dbg_malloc(x)
-#  define MM_MALLOC(n, align) dbg_mm_malloc(n, align)
-#  define FREE(x) dbg_free(x)
+#  define DYNET_MM_MALLOC(n, align) dbg_mm_malloc(n, align)
+#  define DYNET_FREE(x) dbg_free(x)
 #else
 #  define MALLOC(x) malloc(x)
-#  define MM_MALLOC(n, align) _mm_malloc(n, align)
-#  define FREE(x) free(x)
+#  define DYNET_MM_MALLOC(n, align) _mm_malloc(n, align)
+#  define DYNET_FREE(x) free(x)
 #endif
 
 // C++-style memory management

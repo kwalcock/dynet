@@ -503,7 +503,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
     // Allocate temporary memory for bookkeeping
     size_t temp_data_size = (uptop1) * 4 * sizeof(int) +
         (uptop1psig) * 2 * sizeof(float);
-    int* node2profid = (int*)MALLOC(temp_data_size); // mixed types, so no new[]
+    int* node2profid = (int*)DYNET_MALLOC(temp_data_size); // mixed types, so no new[]
     memset(node2profid, 0, temp_data_size);
     // node2left[n] = how many arguments must still be evaluated for Node n
     // before it can be evaluated?

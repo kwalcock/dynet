@@ -83,7 +83,7 @@ void PickNegLogSoftmax::forward_dev_impl(const MyDevice & dev, const vector<cons
     Tensor m(Dim({1},fx.d.bd), (float*)aux_mem + fx.d.bd, fx.device, DeviceMempool::FXS);
     unsigned int *ids_dev = (unsigned int*)((float*)aux_mem + 2*fx.d.bd), *ids_host;
 #ifdef __CUDACC__
-    ids_host = (unsigned int*)MALLOC(fx.d.bd * sizeof(unsigned int));
+    ids_host = (unsigned int*)DYNET_MALLOC(fx.d.bd * sizeof(unsigned int));
 #else
     ids_host = ids_dev;
 #endif
