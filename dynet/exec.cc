@@ -136,7 +136,7 @@ const Tensor& SimpleExecutionEngine::incremental_forward(VariableIndex i) {
           DYNET_RUNTIME_ERR("Ran out of memory when executing node " <<
                             num_nodes_evaluated << ", allocating FWD memory.");
         }
-        void* aux_mem = nullptr;
+        void* aux_mem(nullptr);
         // Is the node requesting extra memory?
         size_t aux_size = node->aux_storage_size();
         if (aux_size) {
@@ -465,13 +465,10 @@ const Tensor& BatchedExecutionEngine::incremental_forward() {
 void BatchedExecutionEngine::garbage_collect() {
   // free any old memory if this is a new CG
   for (auto & batch : batches) {
-    DYNET_DEL(batch.pseudo_node);  // may be nullptr, but that's allowed
-    batch.pseudo_node = nullptr;
+    DYNET_DEL(batch.pseudo_node);
     for (size_t i = 0; i < batch.arg_nfxs.size(); ++i) {
-      if (batch.concat[i] != 0) {
+      if (batch.concat[i] != 0)
         DYNET_DEL(batch.arg_nfxs[i]);
-        batch.arg_nfxs[i] = nullptr;
-      }
     }
   }
   for (Device* dev : device_manager->get_devices())
@@ -759,7 +756,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
       } else { // here: batch_ids.size() > 1
         // Set up the configuration of each component node, including pointer
         // differential from the start of the batch.
-        const Node* node = nullptr;
+        const Node* node(nullptr);
         size_t tot_main = 0, tot_aux = 0, my_main, my_aux;
         for (auto curr_node : batch_ids) {
           node = cg.nodes[curr_node];
@@ -780,7 +777,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
                             ", allocating FWD memory.");
         }
         // for(auto curr_node : batch_ids) nfxs[curr_node].v = head_main + node2diff[curr_node];
-        char *head_aux = nullptr;
+        char *head_aux(nullptr);
         if (tot_aux > 0) {
           head_aux = static_cast<char*>(mempool->allocate(tot_aux));
           if (head_aux == nullptr) {
@@ -888,7 +885,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
       if (profiling_flag) { timer.stop(current_batch_name); }
     }
 
-    free(node2profid);
+    DYNET_FREE(node2profid);
   }
 
   // for(VariableIndex vi = (VariableIndex)0; vi <= upto; ++vi) cerr << "nfxs[" << vi << "] == " << print_vec(as_vector(get_nfx(vi))) << endl;

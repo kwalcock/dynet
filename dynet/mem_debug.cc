@@ -13,12 +13,16 @@ void* dbg_malloc(size_t size) {
   return malloc(size);
 }
 
+void dbg_free(void* ptr) {
+    free(ptr);
+}
+
 void* dbg_mm_malloc(size_t n, size_t align) {
   return _mm_malloc(n, align);
 }
 
-void dbg_free(void* ptr) {
-  free(ptr);
+void dbg_mm_free(void* ptr) {
+    _mm_free(ptr);
 }
 
 void dbg_mem(const char* file, int line) {
@@ -84,8 +88,8 @@ void MemDebug::leak_new() {
 }
 
 void MemDebug::leak_mm_malloc() {
-  char* leak = (char*) DYNET_MM_MALLOC(15, 4);
-  strcpy(leak, "Or anywhere!");
+  char* leak = (char*) DYNET_MM_MALLOC(19, 4);
+  strcpy(leak, "No leaks anywhere!");
 }
 
 void MemDebug::set_break(long index) {

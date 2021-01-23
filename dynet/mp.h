@@ -228,17 +228,14 @@ namespace dynet {
       unsigned i;
       unsigned priority;
       boost::interprocess::message_queue::size_type recvd_size;
-      boost::interprocess::message_queue* mq = nullptr;
+      boost::interprocess::message_queue* mq(nullptr);
       while (true) {
         try {
           mq = DYNET_NEW(boost::interprocess::message_queue (boost::interprocess::open_only, queue_name.c_str()));
           break;
         }
         catch (boost::interprocess::interprocess_exception e) {
-          if (mq != nullptr) {
-            DYNET_DEL(mq);
-            mq = nullptr;
-          }
+          DYNET_DEL(mq);
         }
       }
       while (true) {
@@ -430,7 +427,7 @@ namespace dynet {
       shared_object = get_shared_memory<SharedObject>();
       std::vector<Workload> workloads = create_workloads(num_children);
       std::vector<D> dev_data;
-      Trainer* trainer = nullptr;
+      Trainer* trainer(nullptr);
       unsigned cid = spawn_children(workloads);
       if (cid < num_children) {
         run_child(cid, learner, trainer, workloads, data, dev_data);

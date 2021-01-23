@@ -20,8 +20,8 @@ Expression::Expression(const Expression& other) {
 }
 
 Expression::~Expression() {
-  pg = nullptr; // This is (overly) defensive programming.
-  i = UINT_MAX; // Try to make it hit an unused memory area if misused.
+  reset_ptr(pg);
+  i = 0;
 }
 
 std::string Expression::get_device_name() const {

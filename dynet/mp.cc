@@ -11,7 +11,7 @@ namespace dynet {
     std::string shared_memory_name = "dynet_mp_shared_memory";
     timespec start_time;
     bool stop_requested = false;
-    SharedObject* shared_object = nullptr;
+    SharedObject* shared_object(nullptr);
 
     std::string generate_queue_name() {
       std::ostringstream ss;

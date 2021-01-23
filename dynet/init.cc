@@ -291,9 +291,8 @@ void initialize(int& argc, char**& argv, bool shared_parameters) {
 
 void cleanup() {
   DYNET_DEL(rndeng);
-  rndeng = nullptr;
   reset_device_manager();
-  default_device = nullptr;
+  reset_ptr(default_device);
 }
 
 void reset_rng(unsigned seed) {

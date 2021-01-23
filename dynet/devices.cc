@@ -197,7 +197,7 @@ Device* DeviceManager::get_global_device(const std::string & name) {
   return it->second;
 }
 
-static DeviceManager* device_manager = nullptr;
+static DeviceManager* device_manager(nullptr);
 static std::mutex device_manager_mutex;
 
 DeviceManager* set_device_manager() {
@@ -209,7 +209,7 @@ DeviceManager* set_device_manager() {
 void reset_device_manager() {
   std::lock_guard<std::mutex> guard(device_manager_mutex);
   DYNET_DEL(device_manager);
-  device_manager = nullptr;
+  reset_ptr(device_manager);
 }
 
 DeviceManager* get_device_manager() {

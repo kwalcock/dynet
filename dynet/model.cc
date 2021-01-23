@@ -266,14 +266,14 @@ ParameterCollectionStorage::ParameterCollectionStorage(float weight_decay_lambda
 }
 
 ParameterCollectionStorage::~ParameterCollectionStorage() {
-  if (gradient_norm_scratch) {
+  if (gradient_norm_scratch != nullptr) {
     device_manager->get_global_device("CPU")->mem->myfree(gradient_norm_scratch);
-    gradient_norm_scratch = nullptr;
+    reset_ptr(gradient_norm_scratch);
   }
 }
 
 void ParameterCollectionStorage::project_weights(float radius) {
-  static float* project_scratch = nullptr; // This will never disappear then.  Needs to be done differently or else it leaks.
+  static float* project_scratch(nullptr); // This will never disappear then.  Needs to be done differently or else it leaks.
   auto scratch_size = all_params.size() * sizeof(float);
   // kwa: This does not look threadsafe.
   if (project_scratch == nullptr || sizeof(project_scratch) < scratch_size) {

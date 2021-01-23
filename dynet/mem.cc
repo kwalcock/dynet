@@ -38,7 +38,7 @@ void* CPUAllocator::mymalloc(size_t n) {
 }
 
 void CPUAllocator::myfree(void* mem) {
-  _mm_free(mem);
+  DYNET_MM_FREE(mem);
 }
 
 void CPUAllocator::zero(void* p, size_t n) {
@@ -70,7 +70,7 @@ void SharedAllocator::zero(void* p, size_t n) {
 
 #if HAVE_CUDA
 void* GPUAllocator::mymalloc(size_t n) {
-  void* ptr = nullptr;
+  void* ptr(nullptr);
   CUDA_CHECK(cudaSetDevice(devid));
   CUDA_CHECK(cudaMalloc(&ptr, n));
   if (!ptr) {
