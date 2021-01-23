@@ -164,9 +164,9 @@ void Device_CPU::clear() {
 
   DYNET_DEL(edevice);
 
-  shmem->myfree(kSCALAR_ONE);
-  shmem->myfree(kSCALAR_ZERO);
-  shmem->myfree(kSCALAR_MINUSONE);
+  shmem->myfree(&kSCALAR_ONE);
+  shmem->myfree(&kSCALAR_ZERO);
+  shmem->myfree(&kSCALAR_MINUSONE);
 
   if (shared) DYNET_DEL(shmem);
 }

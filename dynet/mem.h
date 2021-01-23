@@ -16,7 +16,8 @@ struct MemAllocator {
   MemAllocator& operator=(const MemAllocator&) = delete;
   virtual ~MemAllocator();
   virtual void* mymalloc(std::size_t n) = 0;
-  virtual void myfree(void* mem) = 0;
+  virtual void myfree(void** mem) = 0;
+  virtual void myfree(float** mem) { myfree(reinterpret_cast<void**>(mem)); }
   virtual void zero(void* p, std::size_t n) = 0;
   inline std::size_t round_up_align(std::size_t n) const {
     if (align < 2) return n;
@@ -28,14 +29,14 @@ struct MemAllocator {
 struct CPUAllocator : public MemAllocator {
   CPUAllocator() : MemAllocator(32) {}
   void* mymalloc(std::size_t n) override;
-  void myfree(void* mem) override;
+  void myfree(void** mem) override;
   void zero(void* p, std::size_t n) override;
 };
 
 struct SharedAllocator : public MemAllocator {
   SharedAllocator() : MemAllocator(32) {}
   void* mymalloc(std::size_t n) override;
-  void myfree(void* mem) override;
+  void myfree(void** mem) override;
   void zero(void* p, std::size_t n) override;
 };
 
@@ -43,7 +44,7 @@ struct SharedAllocator : public MemAllocator {
 struct GPUAllocator : public MemAllocator {
   explicit GPUAllocator(int devid) : MemAllocator(256), devid(devid) {}
   void* mymalloc(std::size_t n) override;
-  void myfree(void* mem) override;
+  void myfree(void** mem) override;
   void zero(void* p, std::size_t n) override;
   const int devid;
 };

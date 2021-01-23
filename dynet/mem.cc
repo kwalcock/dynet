@@ -37,8 +37,11 @@ void* CPUAllocator::mymalloc(size_t n) {
   return ptr;
 }
 
-void CPUAllocator::myfree(void* mem) {
-  DYNET_MM_FREE(mem);
+void CPUAllocator::myfree(void** mem) {
+  if (*mem) {
+    DYNET_MM_FREE(*mem);
+    *mem = nullptr;
+  }
 }
 
 void CPUAllocator::zero(void* p, size_t n) {
@@ -60,8 +63,11 @@ void* SharedAllocator::mymalloc(size_t n) {
 #endif
 }
 
-void SharedAllocator::myfree(void* mem) {
+void SharedAllocator::myfree(void** mem) {
+  if (*mem) {
 //  munmap(mem, n);
+    *mem = nullptr;
+  }
 }
 
 void SharedAllocator::zero(void* p, size_t n) {
@@ -81,8 +87,11 @@ void* GPUAllocator::mymalloc(size_t n) {
   return ptr;
 }
 
-void GPUAllocator::myfree(void* mem) {
-  CUDA_CHECK(cudaFree(mem));
+void GPUAllocator::myfree(void** mem) {
+  if (*mem) {
+    CUDA_CHECK(cudaFree(*mem));
+    *mem = nullptr;
+  }
 }
 
 void GPUAllocator::zero(void* p, size_t n) {

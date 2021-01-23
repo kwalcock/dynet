@@ -16,7 +16,7 @@ class InternalMemoryPool {
   }
 
   ~InternalMemoryPool() {
-      a->myfree(mem);
+      a->myfree(&mem);
   }
 
   void* allocate(size_t n); 
