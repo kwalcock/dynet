@@ -1,4 +1,5 @@
 #include "dynet/mem_debug.h"
+#include <cstring>
 #include <iostream>
 #include <memory>
 
