@@ -79,10 +79,13 @@ inline void dbg_dynet_mm_free(T** ptr) {
 void dbg_mem(const char* file, int line);
 int dbg_client_block(const char* file, int line);
 
+int mtrace();
+int muntrace();
+
 class MemDebug {
  public:
   // Add interactive to be able to debug memory?
-  MemDebug(bool atExit = true);
+  MemDebug();
   ~MemDebug();
 
   void debug();
@@ -90,6 +93,12 @@ class MemDebug {
   void leak_new();
   void leak_mm_malloc();
   void set_break(long index);
+};
+
+class Trace {
+ public:
+  Trace();
+  ~Trace();
 };
 
 // https://stackoverflow.com/questions/704466/why-doesnt-delete-set-the-pointer-to-null

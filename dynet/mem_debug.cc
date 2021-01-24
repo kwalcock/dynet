@@ -61,12 +61,20 @@ int callSetBreak(int index) {
 #endif
 }
 
-MemDebug::MemDebug(bool atExit) {
-  mtrace();
+int mtrace() {
+  ::mtrace();
+  return 0;
+}
+
+int muntrace() {
+  ::muntrace();
+  return 0;
+}
+
+MemDebug::MemDebug() {
 }
 
 MemDebug::~MemDebug() {
-  muntrace();
 }
 
 void MemDebug::debug() {
@@ -94,9 +102,22 @@ void MemDebug::set_break(long index) {
   callSetBreak(index);
 }
 
-#if defined(_DEBUG) && defined(_MSC_VER)
-MemDebug localMemDebug(true);
-int breakIndex = 0; // callSetBreak(303);
+Trace::Trace() {
+  mtrace();
+}
+
+Trace::~Trace() {
+  muntrace();
+}
+
+#if defined(_DEBUG) || !defined(_MSC_VER)
+// We always try to trace in debug mode.  If not Windows, we even try to trace no matter what,
+// because the overhead is low if MALLOC_TRACE is not set.  It is important that tracing
+// starts now rather than later because Java will start creating C++ objects, mostly via
+// static object constructors, before we are able to call mtrace from there.
+int traceIndex = mtrace();
+// If there is a known, early bad allocation, the breakpoint may need to be set here.
+int breakIndex = 0; // callSetBreak(303); 
 #endif
 
 } // namespace dynet
