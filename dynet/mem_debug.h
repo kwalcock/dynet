@@ -1,14 +1,14 @@
 #ifndef DYNET_MEM_DEBUG_H
 #define DYNET_MEM_DEBUG_H
 
-#if !_WINDOWS
+#if !defined(_MSC_VER)
 #  ifndef NDEBUG
 #    define _DEBUG 1
 #  endif
 #endif
 
 // See https://docs.microsoft.com/en-us/visualstudio/debugger/finding-memory-leaks-using-the-crt-library?view=vs-2019 .
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
 #  if defined(_DEBUG)
 #    define _CRTDBG_MAP_ALLOC
 #  endif
@@ -20,6 +20,10 @@
 #else
 #  include <stdlib.h>
 #  include <mm_malloc.h>
+#endif
+
+#if defined(_MSC_VER)
+void mtrace();
 #endif
 
 namespace dynet {

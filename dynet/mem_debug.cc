@@ -3,15 +3,40 @@
 #include <iostream>
 #include <memory>
 
-#if !_WINDOWS
-#include <mcheck.h>
-#include <mm_malloc.h>
+#if defined(_MSC_VER)
+#  include <cstdlib>
+#else
+#  include <mcheck.h>
+#  include <mm_malloc.h>
+#endif
+
+#if defined(_MSC_VER)
+void mtrace() {
+#  if defined(_DEBUG)
+  bool trace = std::getenv("MALLOC_TRACE") != nullptr;
+
+  if (trace) {
+    bool atExit = true;
+    // _CRTDBG_ALLOC_MEM_DF = Turn on debug allocation
+    // _CRTDBG_LEAK_CHECK_DF = Leak check at program exit
+    int flags = _CRTDBG_ALLOC_MEM_DF;
+    if (atExit)
+      flags |= _CRTDBG_LEAK_CHECK_DF;
+    _CrtSetDbgFlag(flags);
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG /*| _CRTDBG_MODE_WNDW*/);
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+  }
+#  endif
+}
+
+void muntrace() {
+}
 #endif
 
 namespace dynet {
 
 void dbg_mem(const char* file, int line) {
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
   int leaksFound = _CrtDumpMemoryLeaks();
   if (leaksFound)
     std::cerr << "Memory leaks were found when checked from " << file << " at line " << line << "." << std::endl;
@@ -37,28 +62,11 @@ int callSetBreak(int index) {
 }
 
 MemDebug::MemDebug(bool atExit) {
-#if defined(_DEBUG)
-#  if defined(_MSC_VER)
-  // _CRTDBG_ALLOC_MEM_DF = Turn on debug allocation
-  // _CRTDBG_LEAK_CHECK_DF = Leak check at program exit
-  int flags = _CRTDBG_ALLOC_MEM_DF;
-  if (atExit)
-    flags |= _CRTDBG_LEAK_CHECK_DF;
-  _CrtSetDbgFlag(flags);
-  _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG /*| _CRTDBG_MODE_WNDW*/);
-  _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
-#  else
   mtrace();
-#  endif
-#else
-#  if !defined(_MSC_VER)
-  // Use this even in production version for Linux.
-  mtrace();
-#  endif
-#endif
 }
 
 MemDebug::~MemDebug() {
+  muntrace();
 }
 
 void MemDebug::debug() {
