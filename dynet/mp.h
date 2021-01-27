@@ -1,4 +1,5 @@
 #pragma once
+#include "dynet/mem_debug.h"
 #if !_WINDOWS
 #include "dynet/globals.h"
 #include "dynet/dynet.h"
@@ -70,12 +71,12 @@ namespace dynet {
     template <class T>
     T* get_shared_memory() {
       /*std::cerr << "Creating shared memory named " << shared_memory_name << std::endl;
-      auto shm = new boost::interprocess::shared_memory_object(boost::interprocess::create_only, shared_memory_name.c_str(), boost::interprocess::read_write);
+      auto shm = DYNET_NEW(boost::interprocess::shared_memory_object(boost::interprocess::create_only, shared_memory_name.c_str(), boost::interprocess::read_write));
       shm->truncate(sizeof(T));
-      auto region = new boost::interprocess::mapped_region (*shm, boost::interprocess::read_write);*/
-      auto region = new boost::interprocess::mapped_region(boost::interprocess::anonymous_shared_memory(sizeof(T)));
+      auto region = DYNET_NEW(boost::interprocess::mapped_region (*shm, boost::interprocess::read_write));*/
+      auto region = DYNET_NEW(boost::interprocess::mapped_region(boost::interprocess::anonymous_shared_memory(sizeof(T)));
       void* addr = region->get_address();
-      T* obj = new (addr) SharedObject();
+      T* obj = DYNET_NEW((addr) SharedObject());
       return obj;
     }
 
@@ -227,17 +228,14 @@ namespace dynet {
       unsigned i;
       unsigned priority;
       boost::interprocess::message_queue::size_type recvd_size;
-      boost::interprocess::message_queue* mq = nullptr;
+      boost::interprocess::message_queue* mq(nullptr);
       while (true) {
         try {
-          mq = new boost::interprocess::message_queue (boost::interprocess::open_only, queue_name.c_str());
+          mq = DYNET_NEW(boost::interprocess::message_queue (boost::interprocess::open_only, queue_name.c_str()));
           break;
         }
         catch (boost::interprocess::interprocess_exception e) {
-          if (mq != nullptr) {
-            delete mq;
-            mq = nullptr;
-          }
+          DYNET_DEL(mq);
         }
       }
       while (true) {
@@ -429,7 +427,7 @@ namespace dynet {
       shared_object = get_shared_memory<SharedObject>();
       std::vector<Workload> workloads = create_workloads(num_children);
       std::vector<D> dev_data;
-      Trainer* trainer = nullptr;
+      Trainer* trainer(nullptr);
       unsigned cid = spawn_children(workloads);
       if (cid < num_children) {
         run_child(cid, learner, trainer, workloads, data, dev_data);

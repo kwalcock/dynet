@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/tensor-eigen.h"
 #include "dynet/nodes-conv2d.h"
 
@@ -119,7 +120,7 @@ void Conv2D::forward_dev_impl(const MyDevice & dev, const vector<const Tensor*>&
 #ifdef __CUDACC__
 #if HAVE_CUDNN
   if (cudnn_conv_op_ == NULL)
-    cudnn_conv_op_ = new CudnnConvOp(stride, is_valid);
+    cudnn_conv_op_ = DYNET_NEW(CudnnConvOp(stride, is_valid));
   cudnn_conv_op_->forward_impl(dev, xs, fx);
 #else
   throw std::runtime_error("Conv2D::forward_dev_impl not supported without CUDNN");
@@ -151,7 +152,7 @@ void Conv2D::forward_dev_impl(const MyDevice & dev, const vector<const Tensor*>&
     }
   }
 #endif
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 
 template<class MyDevice>
@@ -169,7 +170,7 @@ void Conv2D::backward_dev_impl(const MyDevice & dev,
 #ifdef __CUDACC__
 #if HAVE_CUDNN
   if (cudnn_conv_op_ == NULL)
-    cudnn_conv_op_ = new CudnnConvOp(stride, is_valid);
+    cudnn_conv_op_ = DYNET_NEW(CudnnConvOp(stride, is_valid));
   cudnn_conv_op_->backward_impl(dev, xs, fx, dEdf, i, dEdxi);
 #else
   throw std::runtime_error("Conv2D::backward_dev_impl not supported without CUDNN");
@@ -218,7 +219,7 @@ void Conv2D::backward_dev_impl(const MyDevice & dev,
     t<1>(dEdxi).device(*dev.edevice) += tb<3>(dEdf).sum(red_axis);
   }
 #endif
-  scratch_allocator->free();
+  scratch_allocator->myfree();
 }
 DYNET_NODE_INST_DEV_IMPL(Conv2D)
 

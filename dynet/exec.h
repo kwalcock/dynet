@@ -1,6 +1,8 @@
 #ifndef DYNET_EXEC_H
 #define DYNET_EXEC_H
 
+#include "dynet/mem_debug.h"
+
 #include "dynet/dynet.h"
 
 namespace dynet {

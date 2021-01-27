@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/model.h"
 #include "dynet/tensor.h"
 #include "dynet/tensor-eigen.h"
@@ -94,6 +95,8 @@ ParameterStorage::ParameterStorage(const Dim& d, const ParameterInit & init,
   TensorTools::zero(g);
   init.initialize_params(values);
 }
+
+ParameterStorage::~ParameterStorage() {}
 
 size_t ParameterStorage::size() const { return dim.size(); }
 
@@ -263,18 +266,16 @@ ParameterCollectionStorage::ParameterCollectionStorage(float weight_decay_lambda
 }
 
 ParameterCollectionStorage::~ParameterCollectionStorage() {
-  if (gradient_norm_scratch)
-    device_manager->get_global_device("CPU")->mem->free(gradient_norm_scratch);
+  device_manager->get_global_device("CPU")->mem->myfree(&gradient_norm_scratch);
 }
 
 void ParameterCollectionStorage::project_weights(float radius) {
-  static float* project_scratch = nullptr;
+  static float* project_scratch(nullptr); // This will never disappear then.  Needs to be done differently or else it leaks.
   auto scratch_size = all_params.size() * sizeof(float);
+  // kwa: This does not look threadsafe.
   if (project_scratch == nullptr || sizeof(project_scratch) < scratch_size) {
-    if (project_scratch != nullptr) {
-      default_device->mem->free(gradient_norm_scratch);
-    }
-    project_scratch = (float *) default_device->mem->malloc(scratch_size);
+    default_device->mem->myfree(&project_scratch);
+    project_scratch = (float *) default_device->mem->mymalloc(scratch_size);
   }
   int pi = 0;
   for (auto p : all_params) {
@@ -287,10 +288,14 @@ void ParameterCollectionStorage::project_weights(float radius) {
   cerr << "NORM: " << sqrt(gg) << endl;
 }
 
-ParameterCollection::ParameterCollection() : name("/"), storage(new ParameterCollectionStorage(default_weight_decay_lambda)), parent(nullptr) { }
+ParameterCollection::ParameterCollection() : name("/"),
+    storage(DYNET_NEW(ParameterCollectionStorage(default_weight_decay_lambda))),
+    parent(nullptr) {
+}
 
 ParameterCollection::ParameterCollection(const string & my_name, ParameterCollection* my_parent, float weight_decay_lambda) :
-    name(my_name), storage(new ParameterCollectionStorage(weight_decay_lambda)), parent(my_parent) { }
+    name(my_name), storage(DYNET_NEW(ParameterCollectionStorage(weight_decay_lambda))), parent(my_parent) {
+}
 
 ParameterCollection ParameterCollection::add_subcollection(const string & sub_name, float weight_decay_lambda) {
   if (weight_decay_lambda < 0) { weight_decay_lambda = get_weight_decay_lambda(); }
@@ -305,10 +310,7 @@ ParameterCollection ParameterCollection::add_subcollection(const string & sub_na
   }
 }
 
-ParameterCollection::~ParameterCollection() {
-  if(parent == nullptr && storage != nullptr)
-    delete storage;
-}
+ParameterCollection::~ParameterCollection() {}
 
 void ParameterCollection::set_weight_decay_lambda(float lambda) {
   get_storage().weight_decay.set_lambda(lambda);
@@ -492,22 +494,35 @@ size_t ParameterCollection::updated_parameter_count() const {
 
 ParameterCollectionStorage& ParameterCollection::get_storage() {
   if(storage == nullptr) {
-    if (parent == nullptr)
-      storage = new ParameterCollectionStorage(default_weight_decay_lambda);
+    if (parent == nullptr) {
+      ParameterCollectionStorage* pcs = DYNET_NEW(ParameterCollectionStorage(default_weight_decay_lambda));
+      storage = shared_ptr<ParameterCollectionStorage>(pcs);
+    }
     else
       DYNET_RUNTIME_ERR("ParameterCollection::get_storage() not implemented yet for subsets");
   }
   return *storage;
 }
-
+/*
+Cast away constness, call other function, cast result?
 const ParameterCollectionStorage& ParameterCollection::get_storage() const {
-  if(storage == nullptr) {
-    if (parent == nullptr)
-      const_cast<ParameterCollectionStorage*&>(storage) = new ParameterCollectionStorage(default_weight_decay_lambda);
+  if (storage == nullptr) {
+    if (parent == nullptr) {
+      ParameterCollectionStorage* pcs = DYNET_NEW(ParameterCollectionStorage(default_weight_decay_lambda));
+      storage = make_shared<ParameterCollectionStorage>(pcs);
+    }
     else
       DYNET_RUNTIME_ERR("ParameterCollection::get_storage() not implemented yet for subsets");
   }
   return *storage;
+}
+*/
+
+const ParameterCollectionStorage& ParameterCollection::get_storage() const {
+  ParameterCollection* mutableThis = (ParameterCollection*) this;
+  ParameterCollectionStorage& mutableStorage = mutableThis->get_storage();
+
+  return const_cast<ParameterCollectionStorage&>(mutableStorage);
 }
 
 void save_dynet_model(std::string filename, ParameterCollection* model) {
@@ -807,10 +822,8 @@ template <class MyDevice>
 float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
   auto scratch_size = (all_params.size() + 1) * sizeof(float);
   if (gradient_norm_scratch == nullptr || sizeof(gradient_norm_scratch) < scratch_size) {
-    if (gradient_norm_scratch != nullptr) {
-      dev.mem->free(gradient_norm_scratch);
-    }
-    gradient_norm_scratch = (float*)dev.mem->malloc(scratch_size);
+    dev.mem->myfree(&gradient_norm_scratch);
+    gradient_norm_scratch = (float*)dev.mem->mymalloc(scratch_size);
   }
   size_t pi;
   size_t k1 = 0, k2 = 0;
@@ -818,16 +831,16 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
     Device *dev_k;
     DYNET_ASSERT(all_params.size() == (params.size() + lookup_params.size()),
                  "Unmatched parameter size");
-    if (params.size() && all_params[pi] == params[k1]) {
+    if (k1 < params.size() && all_params[pi] == params[k1]) {
       dev_k = params[k1]->device;
       ++k1;
-    } else if (lookup_params.size() && all_params[pi] == lookup_params[k2]) {
+    } else if (k2 < lookup_params.size() && all_params[pi] == lookup_params[k2]) {
       dev_k = lookup_params[k2]->device;
       ++k2;
     } else {
       DYNET_RUNTIME_ERR("Incorrect device type");
     }
-    float *v = (float *)dev_k->mem->malloc(sizeof(float));
+    float *v = (float *)dev_k->mem->mymalloc(sizeof(float));
     all_params[pi]->g_squared_l2norm(v);
     if (dev_k->type == DeviceType::CPU) {
       gradient_norm_scratch[pi] = *v;
@@ -839,7 +852,7 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
     }
 #endif
     else { throw std::runtime_error("Bad device type"); }
-    dev_k->mem->free(v);
+    dev_k->mem->myfree(&v);
   }
   Tensor scratch_t({(unsigned int)all_params.size()}, gradient_norm_scratch, &dev, DeviceMempool::NONE);
   Tensor sum_t({1}, gradient_norm_scratch + pi, &dev, DeviceMempool::NONE);

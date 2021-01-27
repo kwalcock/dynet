@@ -1,6 +1,8 @@
 #ifndef DYNET_DEVICES_H
 #define DYNET_DEVICES_H
 
+#include "dynet/mem_debug.h"
+
 #include <unordered_map>
 #include <string>
 #include <exception>
@@ -26,8 +28,8 @@ class Device {
   Device(int i, DeviceType t, MemAllocator* m) : device_id(i), type(t), mem(m), pools(4, nullptr) {}
   Device(const Device&) = delete;
   Device& operator=(const Device&) = delete;
-  virtual ~Device();
  public:
+  virtual ~Device(); // This was made public recently.
   void reset_rng(unsigned seed) {};
   int device_id;
   DeviceType type;
@@ -66,9 +68,11 @@ class Device_CPU : public Device {
   typedef Eigen::DefaultDevice EigenDevice;
   explicit Device_CPU(int my_id, const DeviceMempoolSizes & mb, bool shared);
   ~Device_CPU();
+  void clear();
   CPUAllocator cpu_mem;
   Eigen::DefaultDevice* edevice;
   MemAllocator* shmem;
+  bool shared;
 };
 
 class DeviceManager final {
@@ -98,6 +102,8 @@ class DeviceManager final {
 };
 
 DeviceManager* get_device_manager();
+DeviceManager* set_device_manager();
+void reset_device_manager();
 
 inline void show_pool_mem_info() {
   DeviceManager* device_manager = get_device_manager();

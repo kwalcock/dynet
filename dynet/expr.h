@@ -33,9 +33,8 @@ namespace dynet {
 struct Expression {
   ComputationGraph *pg;
   VariableIndex i;
-  unsigned graph_id;
 
-  Expression() : pg(nullptr), i(0), graph_id(0) {}
+  Expression();
 
   /**
    * \brief Base expression constructor
@@ -44,13 +43,15 @@ struct Expression {
    * \param pg Pointer to the computation graph
    * \param i Variable index
    */
-  Expression(ComputationGraph *pg, VariableIndex i) : pg(pg),
-    i(i), graph_id(pg->get_id()) {}
+  Expression(ComputationGraph *pg, VariableIndex i);
+  Expression(const Expression& other);
+
+  virtual ~Expression();
 
   std::string get_device_name() const;
 
   const bool is_stale() const {
-    return (get_number_of_active_graphs() != 1 || graph_id != get_current_graph_id());
+    return pg->is_stale();
   }
 
   /**

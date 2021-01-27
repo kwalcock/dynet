@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/tensor-eigen.h"
 #include "dynet/nodes-pickneglogsoftmax.h"
 
@@ -66,7 +67,7 @@ Node* PickNegLogSoftmax::autobatch_pseudo_node(const ComputationGraph & cg,
       for(auto word_id : *ln->pvals)
         ids.push_back(word_id);
   }
-  return new PickNegLogSoftmax({(VariableIndex)1}, ids);
+  return DYNET_NEW(PickNegLogSoftmax({(VariableIndex)1}, ids));
 }
 
 size_t PickNegLogSoftmax::aux_storage_size() const {
@@ -80,11 +81,11 @@ void PickNegLogSoftmax::forward_dev_impl(const MyDevice & dev, const vector<cons
   if (xs[0]->d.cols() == 1) {
     Tensor z(Dim({1},fx.d.bd), (float*)aux_mem, fx.device, DeviceMempool::FXS);
     Tensor m(Dim({1},fx.d.bd), (float*)aux_mem + fx.d.bd, fx.device, DeviceMempool::FXS);
-    unsigned int *ids_dev = (unsigned int*)((float*)aux_mem + 2*fx.d.bd), *ids_host;
+    unsigned int* ids_dev = (unsigned int*)((float*)aux_mem + 2*fx.d.bd);
 #ifdef __CUDACC__
-    ids_host = (unsigned int*)malloc(fx.d.bd * sizeof(unsigned int));
+    unsigned int* ids_host = (unsigned int*)DYNET_MALLOC(fx.d.bd * sizeof(unsigned int));
 #else
-    ids_host = ids_dev;
+    unsigned int* ids_host = ids_dev;
 #endif
     if(pval) {
       *ids_host = *pval;
@@ -106,7 +107,7 @@ void PickNegLogSoftmax::forward_dev_impl(const MyDevice & dev, const vector<cons
     CUDA_CHECK(cudaMemcpyAsync(ids_dev, ids_host, fx.d.bd * sizeof(unsigned int), cudaMemcpyHostToDevice));
     TensorTools::logsumexp_dev(dev, *xs[0], m, z);
     dynet::gpu::sparse_to_dense_assign(fx.d.bd, ids_dev, xs[0]->v, fx.v);
-    free(ids_host);
+    DYNET_FREE(ids_host);
 #else
     TensorTools::logsumexp_dev(dev, *xs[0], m, z);
     for(unsigned b = 0; b < fx.d.bd; ++b)

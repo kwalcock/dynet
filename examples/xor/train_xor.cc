@@ -1,3 +1,5 @@
+#include "dynet/mem_debug.h"
+
 #include "dynet/training.h"
 #include "dynet/expr.h"
 #include "dynet/io.h"
@@ -8,7 +10,7 @@
 using namespace std;
 using namespace dynet;
 
-int main(int argc, char** argv) {
+int innerMain(int argc, char** argv) {
   dynet::initialize(argc, argv);
 
   const unsigned ITERATIONS = 30;
@@ -68,4 +70,14 @@ int main(int argc, char** argv) {
   // Output the model and parameter objects to a file.
   TextFileSaver saver("xor.model");
   saver.save(m);
+
+  return 0;
+}
+
+int main(int argc, char** argv) {
+  MemDebug myMemDebug;
+  myMemDebug.leak_malloc();
+  int retval = innerMain(argc, argv);
+  cleanup();
+  return retval;
 }

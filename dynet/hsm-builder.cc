@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/hsm-builder.h"
 
 #include <fstream>
@@ -24,7 +25,7 @@ Cluster* Cluster::add_child(unsigned sym) {
   auto it = word2ind.find(sym);
   unsigned i;
   if (it == word2ind.end()) {
-    Cluster* c = new Cluster();
+    Cluster* c = DYNET_NEW(Cluster());
     c->rep_dim = rep_dim;
     c->path = path;
     c->path.push_back(sym);
@@ -248,7 +249,7 @@ Cluster* HierarchicalSoftmaxBuilder::read_cluster_file(const std::string& cluste
   int wc = 0;
   string line;
   vector<unsigned> path;
-  Cluster* root = new Cluster();
+  Cluster* root = DYNET_NEW(Cluster());
   while(getline(in, line)) {
     path.clear();
     ++wc;

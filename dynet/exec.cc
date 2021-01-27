@@ -1,3 +1,4 @@
+#include "dynet/mem_debug.h"
 #include "dynet/exec.h"
 
 #include <unordered_map>
@@ -89,7 +90,7 @@ const Tensor& SimpleExecutionEngine::incremental_forward(VariableIndex i) {
   // free any old memory if this is a new CG
   if (num_nodes_evaluated == 0)
     for (Device* dev : device_manager->get_devices())
-      dev->pools[(int)DeviceMempool::FXS]->free();
+      dev->pools[(int)DeviceMempool::FXS]->myfree();
 
   if (i >= num_nodes_evaluated) {
     nfxs.resize(i + 1);
@@ -135,7 +136,7 @@ const Tensor& SimpleExecutionEngine::incremental_forward(VariableIndex i) {
           DYNET_RUNTIME_ERR("Ran out of memory when executing node " <<
                             num_nodes_evaluated << ", allocating FWD memory.");
         }
-        void* aux_mem = nullptr;
+        void* aux_mem(nullptr);
         // Is the node requesting extra memory?
         size_t aux_size = node->aux_storage_size();
         if (aux_size) {
@@ -175,7 +176,7 @@ void SimpleExecutionEngine::backward(VariableIndex from_where, bool full) {
   ndEdfs.resize(num_nodes);
   const vector<Device*> &devices = device_manager->get_devices();
   for(Device* device : devices)
-    device->pools[(int)DeviceMempool::DEDFS]->free();
+    device->pools[(int)DeviceMempool::DEDFS]->myfree();
 
   // This loop allocates memory on the appropriate devices for the nodes whose
   // derivatives will be computed.
@@ -464,17 +465,14 @@ const Tensor& BatchedExecutionEngine::incremental_forward() {
 void BatchedExecutionEngine::garbage_collect() {
   // free any old memory if this is a new CG
   for (auto & batch : batches) {
-    delete batch.pseudo_node;  // may be nullptr, but that's allowed
-    batch.pseudo_node = nullptr;
+    DYNET_DEL(batch.pseudo_node);
     for (size_t i = 0; i < batch.arg_nfxs.size(); ++i) {
-      if (batch.concat[i] != 0) {
-        delete batch.arg_nfxs[i];
-        batch.arg_nfxs[i] = nullptr;
-      }
+      if (batch.concat[i] != 0)
+        DYNET_DEL(batch.arg_nfxs[i]);
     }
   }
   for (Device* dev : device_manager->get_devices())
-    dev->pools[(int)DeviceMempool::FXS]->free();
+    dev->pools[(int)DeviceMempool::FXS]->myfree();
   batches.clear();
 }
 
@@ -502,7 +500,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
     // Allocate temporary memory for bookkeeping
     size_t temp_data_size = (uptop1) * 4 * sizeof(int) +
         (uptop1psig) * 2 * sizeof(float);
-    int* node2profid = (int*)malloc(temp_data_size); // mixed types, so no new[]
+    int* node2profid = (int*)DYNET_MALLOC(temp_data_size); // mixed types, so no new[]
     memset(node2profid, 0, temp_data_size);
     // node2left[n] = how many arguments must still be evaluated for Node n
     // before it can be evaluated?
@@ -758,7 +756,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
       } else { // here: batch_ids.size() > 1
         // Set up the configuration of each component node, including pointer
         // differential from the start of the batch.
-        const Node* node = nullptr;
+        const Node* node(nullptr);
         size_t tot_main = 0, tot_aux = 0, my_main, my_aux;
         for (auto curr_node : batch_ids) {
           node = cg.nodes[curr_node];
@@ -779,7 +777,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
                             ", allocating FWD memory.");
         }
         // for(auto curr_node : batch_ids) nfxs[curr_node].v = head_main + node2diff[curr_node];
-        char *head_aux = nullptr;
+        char *head_aux(nullptr);
         if (tot_aux > 0) {
           head_aux = static_cast<char*>(mempool->allocate(tot_aux));
           if (head_aux == nullptr) {
@@ -847,7 +845,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
             // 2.a) the inputs need to be concatenated, but are already in the
             // right order within a contiguous block of memory.
             // TODO: make this work completely
-            Tensor* my_xsi = new Tensor;
+            Tensor* my_xsi = DYNET_NEW(Tensor);
             my_xsi->device = node->device;
             my_xsi->mem_pool = DeviceMempool::FXS;
 
@@ -887,7 +885,7 @@ const Tensor& BatchedExecutionEngine::incremental_forward_no_update(
       if (profiling_flag) { timer.stop(current_batch_name); }
     }
 
-    free(node2profid);
+    DYNET_FREE(&node2profid);
   }
 
   // for(VariableIndex vi = (VariableIndex)0; vi <= upto; ++vi) cerr << "nfxs[" << vi << "] == " << print_vec(as_vector(get_nfx(vi))) << endl;
@@ -954,7 +952,7 @@ void BatchedExecutionEngine::backward(VariableIndex from_where, bool full) {
   vector<Tensor> batched_ndEdfs(num_batches);
   ndEdfs.resize(node2batch.size());
   for(Device* device : device_manager->get_devices())
-    device->pools[(int)DeviceMempool::DEDFS]->free();
+    device->pools[(int)DeviceMempool::DEDFS]->myfree();
   for (unsigned i = 0; i < num_batches; ++i) {
     const auto & my_batch = batches[i];
     const auto & dim = my_batch.nfx.d;
