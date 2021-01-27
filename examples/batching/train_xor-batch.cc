@@ -9,11 +9,6 @@ using namespace std;
 using namespace dynet;
 
 int main(int argc, char** argv) {
-  MemDebug memDebug;
-  memDebug.leak_malloc();
-  memDebug.leak_new();
-  memDebug.leak_mm_malloc();
-
   dynet::initialize(argc, argv);
 
   // parameters
