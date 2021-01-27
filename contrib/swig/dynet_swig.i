@@ -224,9 +224,12 @@ namespace dynet {
 
 namespace dynet {
 
+int mtrace();
+int muntrace();
+
 class MemDebug {
  public:
-  MemDebug(bool atExit = true);
+  MemDebug();
   ~MemDebug();
 
   void debug();
@@ -234,6 +237,12 @@ class MemDebug {
   void leak_new();
   void leak_mm_malloc();
   void set_break(long index);
+};
+
+class Trace {
+ public:
+  Trace();
+  ~Trace();
 };
 
 }
