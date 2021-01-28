@@ -14,7 +14,7 @@
 
 #if defined(WIN32) || defined(__APPLE__)
 void mtrace() {
-#  if defined(_DEBUG)
+#  if defined(_DEBUG) && !defined(__APPLE__)
   bool trace = std::getenv("MALLOC_TRACE") != nullptr;
 
   if (trace) {
