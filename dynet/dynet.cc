@@ -342,7 +342,7 @@ namespace dynet {
   // factory function should call this right after creating a new node object
   // to set its dimensions properly
   void ComputationGraph::set_dim_for_new_node(const VariableIndex& i) {
-    if (i < 0 || nodes.size() <= i)
+    if (nodes.size() <= i)
       DYNET_RUNTIME_ERR("Bad index (" << i << ") in ComputationGraph::set_dim_for_new_node where nodes.size() = " << nodes.size())
     Node* node = nodes[i];
     std::vector<Dim> xds(node->arity());
