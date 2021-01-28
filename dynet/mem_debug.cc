@@ -3,14 +3,16 @@
 #include <iostream>
 #include <memory>
 
-#if defined(_MSC_VER)
+#if defined(WIN32)
 #  include <cstdlib>
 #else
-#  include <mcheck.h>
+#  if !defined(APPLE)
+#    include <mcheck.h>
+#  endif
 #  include <mm_malloc.h>
 #endif
 
-#if defined(_MSC_VER)
+#if defined(WIN32) || defined(APPLE)
 void mtrace() {
 #  if defined(_DEBUG)
   bool trace = std::getenv("MALLOC_TRACE") != nullptr;
@@ -36,7 +38,7 @@ void muntrace() {
 namespace dynet {
 
 void dbg_mem(const char* file, int line) {
-#if defined(_MSC_VER)
+#if defined(WIN32)
   int leaksFound = _CrtDumpMemoryLeaks();
   if (leaksFound)
     std::cerr << "Memory leaks were found when checked from " << file << " at line " << line << "." << std::endl;
@@ -46,7 +48,7 @@ void dbg_mem(const char* file, int line) {
 }
 
 int dbg_client_block(const char* file, int line) {
-#if defined(_DEBUG) && defined(_MSC_VER)
+#if defined(_DEBUG) && defined(WIN32)
   return _CLIENT_BLOCK;
 #else
   return 0;
@@ -54,7 +56,7 @@ int dbg_client_block(const char* file, int line) {
 }
 
 int callSetBreak(int index) {
-#if defined(_DEBUG) && defined(_MSC_VER)
+#if defined(_DEBUG) && defined(WIN32)
   return _CrtSetBreakAlloc(index);
 #else
   return index;
@@ -110,7 +112,7 @@ Trace::~Trace() {
   muntrace();
 }
 
-#if defined(_DEBUG) || !defined(_MSC_VER)
+#if defined(_DEBUG) || !defined(WIN32)
 // We always try to trace in debug mode.  If not Windows, we even try to trace no matter what,
 // because the overhead is low if MALLOC_TRACE is not set.  It is important that tracing
 // starts now rather than later because Java will start creating C++ objects, mostly via

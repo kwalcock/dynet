@@ -1,14 +1,14 @@
 #ifndef DYNET_MEM_DEBUG_H
 #define DYNET_MEM_DEBUG_H
 
-#if !defined(_MSC_VER)
+#if !defined(WIN32)
 #  ifndef NDEBUG
 #    define _DEBUG 1
 #  endif
 #endif
 
 // See https://docs.microsoft.com/en-us/visualstudio/debugger/finding-memory-leaks-using-the-crt-library?view=vs-2019 .
-#if defined(_MSC_VER)
+#if defined(WIN32)
 #  if defined(_DEBUG)
 #    define _CRTDBG_MAP_ALLOC
 #  endif
@@ -22,7 +22,7 @@
 #  include <mm_malloc.h>
 #endif
 
-#if defined(_MSC_VER)
+#if defined(WIN32) || defined(APPLE)
 void mtrace();
 #endif
 
@@ -124,7 +124,7 @@ inline void dynet_delete(T*& ptr) {
 #endif
 
 // C++-style memory management
-#if defined(_DEBUG) && defined(_MSC_VER)
+#if defined(_DEBUG) && defined(WIN32)
    // Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
    // allocations to be of _CLIENT_BLOCK type.
 #  define CLIENT_BLOCK(file, line) dbg_client_block(file, line)
