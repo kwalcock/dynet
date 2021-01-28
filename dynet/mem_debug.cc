@@ -6,13 +6,13 @@
 #if defined(WIN32)
 #  include <cstdlib>
 #else
-#  if !defined(APPLE)
+#  if !defined(MACOS)
 #    include <mcheck.h>
 #  endif
 #  include <mm_malloc.h>
 #endif
 
-#if defined(WIN32) || defined(APPLE)
+#if defined(WIN32) || defined(MACOS)
 void mtrace() {
 #  if defined(_DEBUG)
   bool trace = std::getenv("MALLOC_TRACE") != nullptr;

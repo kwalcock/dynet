@@ -22,7 +22,7 @@
 #  include <mm_malloc.h>
 #endif
 
-#if defined(WIN32) || defined(APPLE)
+#if defined(WIN32) || defined(MACOS)
 void mtrace();
 #endif
 
