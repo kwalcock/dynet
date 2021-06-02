@@ -13,6 +13,7 @@
 #define DYNET_TRAINING_H_
 
 #include <vector>
+#include <iostream>
 
 #include "dynet/model.h"
 #include "dynet/shadow-params.h"
@@ -26,6 +27,17 @@
   void update_rule(real gscale, const std::vector<Tensor*> & values) override;
 
 namespace dynet {
+
+enum struct MovingAverage
+{
+    None,
+    Cumulative,
+    Exponential
+};
+
+std::ostream& operator<<(std::ostream& os, const MovingAverage& o);
+std::istream& operator>>(std::istream& is, MovingAverage& o);
+
 
 /**
  * \ingroup optimizers
@@ -42,8 +54,26 @@ struct Trainer {
    * \param learning_rate Initial learning rate
    */
   explicit Trainer(ParameterCollection& m, real learning_rate) :
-    learning_rate(learning_rate), clipping_enabled(true), clip_threshold(5),
-    clips(), updates(), clips_since_status(), updates_since_status(), sparse_updates_enabled(true), aux_allocated(0), aux_allocated_lookup(0), model(&m) {}
+    learning_rate(learning_rate),
+    clipping_enabled(true),
+    clip_threshold(5),
+    clips(),
+    updates(),
+    clips_since_status(),
+    updates_since_status(),
+    sparse_updates_enabled(true),
+    aux_allocated(0),
+    aux_allocated_lookup(0),
+    ema_beta(0.f),
+    ma_mode(MovingAverage::None),
+    ma_params_swapped(false),
+    ma_params_saved(false),
+    ma_update_freq(1u),
+    ma_updates(0u),
+    ma_aux_allocated(0),
+    ma_aux_allocated_lookup(0),
+    model(&m)
+  {}
   virtual ~Trainer();
 
   /**
@@ -69,17 +99,47 @@ struct Trainer {
 
   /**
    * @brief Restarts the optimizer
-   * @details Clears all momentum values and assimilate (if applicable)
+   * @details Clears all momentum values and assimilate (if applicable).
+   *        This method does not update the current hyperparameters
+   *.       (for example the bias parameter of the AdadeltaTrainer is left unchanged).
    */
   virtual void restart() = 0;
 
   /**
    * @brief Restarts the optimizer with a new learning rate
-   * @details Clears all momentum values and assimilate (if applicable) and resets the learning rate
+   * @details Clears all momentum values and assimilate (if applicable) and resets the learning rate.
+   *        This method does not update the current hyperparameters
+   *.       (for example the bias parameter of the AdadeltaTrainer is left unchanged).
    *
    * \param learning_rate New learning rate
    */
   void restart(real lr);
+
+  /**
+   * @brief Save the optimizer state
+   * @details Write all hyperparameters, momentum values and assimilate (if applicable) to stream.
+   *          If the parameters are swapped with their moving averages, only the latters are saved.
+   *
+   * \param os Output stream
+   */
+  virtual void save(std::ostream& os);
+
+  /**
+   * @brief Load the optimizer state
+   * @details Read all hyperparameters, momentum values and assimilate (if applicable) from stream.
+   *
+   * \param os Input stream
+   */
+  virtual void populate(std::istream& is);
+
+  /**
+   * @brief Load the optimizer state
+   * @details Read all hyperparameters, momentum values and assimilate (if applicable) from stream.
+   *
+   * \param os Input stream
+   * \param lr New learning rate
+   */
+  void populate(std::istream& is, real lr);
 
   /**
    * \brief Clip gradient
@@ -123,6 +183,61 @@ struct Trainer {
 
   unsigned aux_allocated;
   unsigned aux_allocated_lookup;
+
+protected:
+  real ema_beta; // Exponential Moving Averaged only
+  MovingAverage ma_mode;
+  bool ma_params_swapped; // true if params and moving av. of params have been swapped
+  bool ma_params_saved; // true if params have been saved when swapping
+  unsigned ma_update_freq; // the moving average will be updated each ema_update_frequency updates
+  unsigned ma_updates; // number of times the moving av. has been updated
+  unsigned ma_aux_allocated;
+  unsigned ma_aux_allocated_lookup;
+  // Shadow parameters used for moving average
+  std::vector<ShadowParameters> ma_p;
+  std::vector<ShadowLookupParameters> ma_lp;
+  std::vector<ShadowParameters> ma_saved_p;
+  std::vector<ShadowLookupParameters> ma_saved_lp;
+
+public:
+  /**
+   * Whether the the trainer is storing the moving average of parameters
+   *
+   * \return The moving average mode
+   */
+  MovingAverage moving_average();
+
+  /**
+   * Enable the computation of the exponential moving average of parameters.
+   * \details This function must be called before any update.
+   *
+   * \param beta The degree of weighting decrease
+   * \param update_freq Frequency of update of the EMA
+   */
+  void exponential_moving_average(float beta, unsigned update_freq=1u);
+
+  /**
+   * Enable the computation of the cumulative moving average of parameters.
+   * \details This function must be called before any update.
+   *
+   * \param update_freq Frequency of update of the moving average
+   */
+  void cumulative_moving_average(unsigned update_freq=1u);
+
+  /**
+   * Set the network parameters to their moving average
+   * \details If the current weights are not saved, the optimizer cannot be used
+   *          anymore (e.g. the update() function will throw an exception)
+   *
+   * \param save_weights Whether to save the current weights.
+   * \param bias_bias_correction Whether to apply bias correction (used for exponential moving average only)
+   */
+    void swap_params_to_moving_average(bool save_weights=true, bool bias_correction=false);
+
+  /**
+   * Restore the parameters of the model if they are set to their moving average
+   */
+  void swap_params_to_weights();
 
   void status() {
     std::cerr << "[lr=" << learning_rate << " clips=" << clips_since_status << " updates=" << updates_since_status << "] ";
@@ -173,6 +288,14 @@ protected:
    */
   virtual void update_lookup_params(real gscale, size_t idx) = 0;
 
+  template <class MyDevice> void update_ma_rule_dev(const MyDevice& dev, Tensor* ma, Tensor* p);
+  void update_ma_rule(Tensor* ma, Tensor* p);
+
+  template <class MyDevice> void swap_params_to_ma_rule_dev(const MyDevice& dev, bool bias_correction, bool save_weights, Tensor* p, Tensor* mem, Tensor* ma);
+  void swap_params_to_ma_rule(bool bias_correction, bool save_weights, Tensor* p, Tensor* mem, Tensor* ma);
+
+  template <class MyDevice> void swap_params_to_weights_rule_dev(const MyDevice& dev, Tensor* p, Tensor* mem);
+  void swap_params_to_weights_rule(Tensor* p, Tensor* mem);
 };
 
 /**
@@ -194,6 +317,7 @@ struct SimpleSGDTrainer : public Trainer {
    */
   explicit SimpleSGDTrainer(ParameterCollection& m, real learning_rate = 0.1) : Trainer(m, learning_rate) {}
   void restart() override {};
+
   using Trainer::restart;
 protected:
   DYNET_TRAINER_DEFINE_DEV_IMPL()
@@ -236,6 +360,7 @@ struct CyclicalSGDTrainer : public Trainer {
    */
   explicit CyclicalSGDTrainer(ParameterCollection& m, float learning_rate_min = 0.01, float learning_rate_max = 0.1, float step_size = 2000, float gamma = 1.0, float edecay = 0.0) : Trainer(m, learning_rate_min), e_min(learning_rate_min), e_max(learning_rate_max), step_size(step_size), gamma(gamma), it(0) {}
   void restart() override {};
+
   using Trainer::restart;
   void update() override {
     Trainer::update();
@@ -283,6 +408,10 @@ struct MomentumSGDTrainer : public Trainer {
   void restart() override;
   using Trainer::restart;
 
+  void save(std::ostream& os) override;
+  void populate(std::istream& is) override;
+  using Trainer::populate;
+
   // the following represent the current velocity
   // The shadow parameters are made public for testing, ideally they shouldn't be
   std::vector<ShadowParameters> vp;
@@ -321,6 +450,10 @@ struct AdagradTrainer : public Trainer {
 
   void restart() override;
   using Trainer::restart;
+
+  void save(std::ostream& os) override;
+  void populate(std::istream& is) override;
+  using Trainer::populate;
 protected:
   DYNET_TRAINER_DEFINE_DEV_IMPL()
   virtual unsigned alloc_impl() override;
@@ -358,6 +491,10 @@ struct AdadeltaTrainer : public Trainer {
 
   void restart() override;
   using Trainer::restart;
+
+  void save(std::ostream& os) override;
+  void populate(std::istream& is) override;
+  using Trainer::populate;
 protected:
   DYNET_TRAINER_DEFINE_DEV_IMPL()
   virtual unsigned alloc_impl() override;
@@ -396,6 +533,10 @@ struct RMSPropTrainer : public Trainer {
 
   void restart() override;
   using Trainer::restart;
+
+  void save(std::ostream& os) override;
+  void populate(std::istream& is) override;
+  using Trainer::populate;
 protected:
   DYNET_TRAINER_DEFINE_DEV_IMPL()
   virtual unsigned alloc_impl() override;
@@ -435,6 +576,9 @@ struct AdamTrainer : public Trainer {
   void restart() override;
   using Trainer::restart;
 
+  void save(std::ostream& os) override;
+  void populate(std::istream& is) override;
+  using Trainer::populate;
 protected:
   DYNET_TRAINER_DEFINE_DEV_IMPL()
   virtual unsigned alloc_impl() override;
@@ -478,6 +622,9 @@ struct AmsgradTrainer : public Trainer {
   void restart() override;
   using Trainer::restart;
 
+  void save(std::ostream& os) override;
+  void populate(std::istream& is) override;
+  using Trainer::populate;
 protected:
   DYNET_TRAINER_DEFINE_DEV_IMPL()
   virtual unsigned alloc_impl() override;
@@ -526,6 +673,10 @@ struct EGTrainer : public Trainer {
 
   void restart() override;
   using Trainer::restart;
+
+  void save(std::ostream& os) override;
+  void populate(std::istream& is) override;
+  using Trainer::populate;
 protected:
   DYNET_TRAINER_DEFINE_DEV_IMPL()
   virtual unsigned alloc_impl() override;

@@ -71,7 +71,7 @@ void MaxPooling2D::forward_dev_impl(const MyDevice & dev, const vector<const Ten
 #ifdef __CUDACC__
 #if HAVE_CUDNN
   if (cudnn_maxpool_op_ == NULL)
-    cudnn_maxpool_op_ = DYNET_NEW(CudnnMaxPooling2DOp(ksize, stride, is_valid));
+    cudnn_maxpool_op_.reset(DYNET_NEW(CudnnMaxPooling2DOp(ksize, stride, is_valid)));
   cudnn_maxpool_op_->forward_impl(dev, xs, fx);
 #else
   throw std::runtime_error("MaxPooling2D::forward_dev_impl not supported without CUDNN");
@@ -108,7 +108,7 @@ void MaxPooling2D::backward_dev_impl(const MyDevice & dev,
 #ifdef __CUDACC__
 #if HAVE_CUDNN
   if (cudnn_maxpool_op_ == NULL)
-    cudnn_maxpool_op_ = DYNET_NEW(CudnnMaxPooling2DOp(ksize, stride, is_valid));
+    cudnn_maxpool_op_.reset(DYNET_NEW(CudnnMaxPooling2DOp(ksize, stride, is_valid)));
   cudnn_maxpool_op_->backward_impl(dev, xs, fx, dEdf, i, dEdxi);
 #else
   throw std::runtime_error("MaxPooling2D::backward_dev_impl not supported without CUDNN");

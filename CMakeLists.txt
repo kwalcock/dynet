@@ -99,12 +99,20 @@ endif()
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W1 /MP")   # -Wall produces 20k warnings. Enable parallel compilation
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-finite-math-only -Wall -Wno-missing-braces -std=c++11 -g")
-  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-finite-math-only -Wall -Wno-missing-braces -std=c++11")
+
+  if (NOT RELEASE_OPT_LEVEL)
+    set(RELEASE_OPT_LEVEL "3") # kwa: 3 used to be fast
+  endif()
+  message("-- Optimization level: ${RELEASE_OPT_LEVEL}")
+
+  
+  set(CMAKE_CXX_FLAGS_DEBUG "-pedantic -O0 -g -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Og -g")
   if(ENABLE_NONNATIVE)
-    set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O3 -march=x86-64") # kwa: -O3 used to be -Ofast
+    set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O${RELEASE_OPT_LEVEL} -march=x86-64 -DNDEBUG")
   else()
-    set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O3 -march=native") # kwa: -O3 used to be -Ofast
+    set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O${RELEASE_OPT_LEVEL} -march=native -DNDEBUG")
   endif()
 endif()
 
@@ -219,6 +227,11 @@ endif(ENABLE_CPP_EXAMPLES)
 if(PYTHON)
   add_subdirectory(python)
 endif(PYTHON)
+
+if(ENABLE_C)
+  message("-- Enabling C")
+  add_subdirectory(contrib/c)
+endif(ENABLE_C)
 
 if(ENABLE_SWIG)
   message("-- Enabling SWIG")
