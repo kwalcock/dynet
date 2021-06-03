@@ -29,14 +29,47 @@ namespace dynet {
       return n_hgs;
     }
 
-// perform the forward/backward passes in one or multiple calls
-// TODO: This is a lot of code for something simple. Can it be shortened?
-void Node::forward(const std::vector<const Tensor*>& xs,
-                   Tensor& fx) const {
-  if (this->supports_multibatch() || fx.d.batch_elems() == 1) {
-    forward_impl(xs, fx);
-  } else {
-    DYNET_RUNTIME_ERR("Node " << this->as_dummy_string() << " does not support batching but got fed batched tensor");
+    unsigned inc_active_count() {
+      int index = n_cumul_hgs;
+      n_hgs++;
+      n_cumul_hgs++;
+      return index;
+    }
+
+    void dec_active_count() {
+      n_hgs--;
+    }
+
+    unsigned get_cumulative_count() {
+      return n_cumul_hgs;
+    }
+  };
+
+  CgTracker cgTracker;
+  std::mutex cgTrackerMutex;
+
+  int get_number_of_active_graphs() {
+    std::lock_guard<std::mutex> guard(cgTrackerMutex);
+    return cgTracker.get_active_count();
+  };
+
+  unsigned get_current_graph_id() {
+    std::lock_guard<std::mutex> guard(cgTrackerMutex);
+    return cgTracker.get_cumulative_count();
+  };
+
+  Node::~Node() {}
+  size_t Node::aux_storage_size() const { return 0; }
+
+  // perform the forward/backward passes in one or multiple calls
+  // TODO: This is a lot of code for something simple. Can it be shortened?
+  void Node::forward(const std::vector<const Tensor*>& xs,
+                     Tensor& fx) const {
+    if (this->supports_multibatch() || fx.d.batch_elems() == 1) {
+      forward_impl(xs, fx);
+    } else {
+      DYNET_RUNTIME_ERR("Node " << this->as_dummy_string() << " does not support batching but got fed batched tensor");
+    }
   }
 
   void Node::backward(const std::vector<const Tensor*>& xs,
@@ -363,52 +396,34 @@ void Node::forward(const std::vector<const Tensor*>& xs,
     }
   }
 
-  void ComputationGraph::dump(const string& filename, bool show_values, bool show_gradients, bool nan_check_only) {
-  // Create an ostream using either the given filename or cout if none given
-  std::streambuf* buf;
-  std::ofstream of;
-  if (filename != "") {
-    of.open(filename);
-    buf = of.rdbuf();
-  }
-  else {
-    buf = std::cout.rdbuf();
-  }
-  std::ostream out(buf);
+  void ComputationGraph::dump(const std::string& filename, bool show_values, bool show_gradients, bool nan_check_only) {
+    // Create an ostream using either the given filename or cout if none given
+    std::streambuf* buf;
+    std::ofstream of;
+    if (filename != "") {
+      of.open(filename);
+      buf = of.rdbuf();
+    }
+    else {
+      buf = std::cout.rdbuf();
+    }
+    std::ostream out(buf);
 
-  if (nodes.size() == 0) {
-    out << "(Computation graph is empty)" << std::endl;
-    return;
-  }
-
-  const VariableIndex node_max_index = (VariableIndex)(nodes.size() - 1);
-  incremental_forward(node_max_index);
-  for(VariableIndex i = 0; i < node_max_index; ++i) {
-
-    out << "Node " << i << std::endl;
-    if (show_values) {
-      Tensor value = get_value(i);
-      out << "Value: ";
-      if (nan_check_only) {
-        if (value.is_valid()) {
-          out << "valid";
-        }
-        else {
-          out << "invalid";
-        }
-      }
-      else {
-        out << std::endl << value;
-      }
-      out << std::endl;
+    if (nodes.size() == 0) {
+      out << "(Computation graph is empty)" << std::endl;
+      return;
     }
 
-    if (show_gradients) {
-      out << "Gradient: ";
-      try {
-        Tensor gradient = get_gradient(i);
+    const VariableIndex node_max_index = (VariableIndex)(nodes.size() - 1);
+    incremental_forward(node_max_index);
+    for(VariableIndex i = 0; i < node_max_index; ++i) {
+
+      out << "Node " << i << std::endl;
+      if (show_values) {
+        Tensor value = get_value(i);
+        out << "Value: ";
         if (nan_check_only) {
-          if (gradient.is_valid()) {
+          if (value.is_valid()) {
             out << "valid";
           }
           else {
@@ -416,15 +431,32 @@ void Node::forward(const std::vector<const Tensor*>& xs,
           }
         }
         else {
-          out << std::endl << gradient;
+          out << std::endl << value;
         }
         out << std::endl;
       }
-      catch(const std::runtime_error& e) {
-        out << "(not computed)" << std::endl;
+
+      if (show_gradients) {
+        out << "Gradient: ";
+        try {
+          Tensor gradient = get_gradient(i);
+          if (nan_check_only) {
+            if (gradient.is_valid()) {
+              out << "valid";
+            }
+            else {
+              out << "invalid";
+            }
+          }
+          else {
+            out << std::endl << gradient;
+          }
+          out << std::endl;
+        }
+        catch(const std::runtime_error& e) {
+          out << "(not computed)" << std::endl;
+        }
       }
     }
   }
-}
-
 }  // namespace dynet

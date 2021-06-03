@@ -7,8 +7,8 @@
 #include "dynet/weight-decay.h"
 #include "dynet/io.h"
 
-// same as in dynet/io.cc
-static const int FLOAT32_PRECISION = 8;
+// same as in dynet/io.cc => io.h // kwa
+// static const int FLOAT32_PRECISION = 8;
 
 // Macros for defining parameter update functions
 #ifdef __CUDACC__
