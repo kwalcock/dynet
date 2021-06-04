@@ -185,9 +185,7 @@ DeviceManager::~DeviceManager() {
 }
 
 void DeviceManager::clear() {
-  // TODO: Devices cannot be deleted at the moment because the destructor
-  // is protected
-  // for(Device* device : devices) delete device;
+  for (Device* device : devices) DYNET_DEL(device);
   devices.clear();
   devices_map.clear();
 }
