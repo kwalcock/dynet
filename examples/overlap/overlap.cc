@@ -73,6 +73,10 @@ void run(int threadCount) {
 }
 
 int main(int _argc, char** _argv) {
+  dynet::MemDebug myMemDebug;
+  // Set environment variable MALLOC_TRACE to check this.
+  myMemDebug.leak_malloc();
+
   const int threadCount = 3;
 
   std::cout << "Program started for " << threadCount << " threads!" << std::endl;
@@ -90,5 +94,6 @@ int main(int _argc, char** _argv) {
 
   for (int i = 0; i < 10; i++)
     run(threadCount);
+  dynet::cleanup();
   std::cout << "Program finished!" << std::endl;
 }
