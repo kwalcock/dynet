@@ -6,6 +6,24 @@
 
 using namespace dynet;
 
+
+void DynamicCPUMemoryPool::zero(void* p, size_t n) {
+  auto rounded_n = a->round_up_align(n);
+  a->zero(p, rounded_n);
+}
+
+void* DynamicCPUMemoryPool::allocate(size_t n) {
+  auto rounded_n = a->round_up_align(n);
+  void* res = a->mymalloc(rounded_n);
+  if (res) {
+    std::lock_guard<std::mutex> guard(dynamicMutex);
+    // These two operations need to be kept in sync.
+    ptrs.push_back(res);
+    sizes.push_back(rounded_n);
+  }
+  return res;
+}
+
 void* InternalMemoryPool::allocate(size_t n) {
   auto rounded_n = a->round_up_align(n);
   if (rounded_n + used > capacity) {
@@ -19,25 +37,32 @@ void* InternalMemoryPool::allocate(size_t n) {
 void InternalMemoryPool::sys_alloc(size_t cap) {
   capacity = a->round_up_align(cap);
   mem = a->mymalloc(capacity);
-  if (mem == NULL)
+  if (mem == nullptr)
     DYNET_RUNTIME_ERR(name << " failed to allocate " << capacity);
   used = 0;
 }
 
-AlignedMemoryPool::AlignedMemoryPool(const std::string &name, size_t initial_cap, MemAllocator *a, size_t expanding_unit) : name(name), cap(initial_cap), current(0), a(a), expanding_unit(expanding_unit) {
+AlignedMemoryPool::AlignedMemoryPool(const std::string &name, size_t initial_cap, MemAllocator *a, size_t expanding_unit, bool dynamic) : name(name), cap(initial_cap), current(0), a(a), expanding_unit(expanding_unit), dynamic(dynamic) {
   DYNET_ARG_CHECK(cap > 0, "Attempt to allocate memory of size 0 in AlignedMemoryPool");
-  pools.push_back(DYNET_NEW(InternalMemoryPool(name, cap, a)));
+  add_pool(cap);
 }
+
 AlignedMemoryPool::~AlignedMemoryPool() {
-  for ( auto p : pools) { DYNET_DEL(p); }
+  for (auto p : pools) DYNET_DEL(p);
+}
+
+void AlignedMemoryPool::add_pool(size_t cap) {
+  if (dynamic) pools.push_back(DYNET_NEW(DynamicCPUMemoryPool(name)));
+  else pools.push_back(DYNET_NEW(InternalMemoryPool(name, cap, a)));
 }
 
 void* AlignedMemoryPool::allocate(size_t n) {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   void *res = pools[current]->allocate(n);
   if (res == 0) {
     // round up to the nearest multiple of expanding_unit
     size_t new_pool_size  = (n + expanding_unit-1) / expanding_unit * expanding_unit;
-    pools.push_back(DYNET_NEW(InternalMemoryPool(name, new_pool_size, a)));
+    add_pool(new_pool_size);
     cap += new_pool_size;
     current++;
     res = pools[current]->allocate(n);
@@ -47,20 +72,28 @@ void* AlignedMemoryPool::allocate(size_t n) {
 }
 
 void AlignedMemoryPool::myfree() {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   if (current > 0) {
     for (auto p : pools) { DYNET_DEL(p); }
     pools.clear();
-    pools.push_back(DYNET_NEW(InternalMemoryPool(name, cap, a)));
+    add_pool(cap);
+    // kwa: I don't see the need for this.
+    // cap = cap * (current + 1);
     current = 0;
   }
-  pools[0]->myfree();
+  else
+    // If current is still zero, then the capacity hasn't changed and the
+    // existing pool can be reused as if it had just been created as above.
+    pools[0]->myfree();
 }
 
 void AlignedMemoryPool::zero_allocated_memory() {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   for (auto p : pools) { p->zero_allocated_memory(); }
 }
 
 size_t AlignedMemoryPool::used() {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   if (current == 0) {
     return pools[0]->used;
   }
@@ -70,6 +103,7 @@ size_t AlignedMemoryPool::used() {
 }
 
 void AlignedMemoryPool::set_used(size_t s) {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   if(s != pools.back()->used) {
     DYNET_ARG_CHECK(pools.size() == 1, "Dynet does not support both dynamic increasing of memory pool size, and automatic batching or memory checkpointing. If you want to use automatic batching or checkpointing, please pre-allocate enough memory using the --dynet-mem command line option (details http://dynet.readthedocs.io/en/latest/commandline.html).");
     pools[0]->used = s;
@@ -87,5 +121,6 @@ void AlignedMemoryPool::set_used(size_t s) {
 }
 
 size_t AlignedMemoryPool::get_cap() {
+  std::lock_guard<std::mutex> guard(alignedMutex);
   return cap;
 }

@@ -22,16 +22,15 @@ using namespace std;
 namespace dynet {
 
 DynetParams::DynetParams() : random_seed(0), mem_descriptor("512"), weight_decay(0), autobatch(0), profiling(0),
-  shared_parameters(false), ngpus_requested(false), ids_requested(false), cpu_requested(false), requested_gpus(-1)
+  forward_only(0), shared_parameters(false), ngpus_requested(false), ids_requested(false), cpu_requested(false),
+  requested_gpus(-1), dynamic(false)
 {
 #if HAVE_CUDA
   gpu_mask = std::vector<int>(MAX_GPUS, 0);
 #endif
 }
 
-DynetParams::~DynetParams()
-{
-}
+DynetParams::~DynetParams() {}
 
 static bool has_arg(int argi, int argc, char** argv) {
   const std::string arg(argv[argi]);
@@ -100,6 +99,17 @@ DynetParams extract_dynet_params(int& argc,
       }
     }
 
+    // Memory
+    else if (arg == "--dynet-dynamic-mem" || arg == "--dynet_dynamic_mem") {
+      if ((argi + 1) >= argc) {
+        throw std::invalid_argument("[dynet] --dynet-dynamic-mem expects an argument (bool)");
+      } else {
+        string a2 = argv[argi + 1];
+        istringstream c(a2); c >> params.dynamic;
+        remove_args(argc, argv, argi, 2);
+      }
+    }
+
     // Weight decay
     else if (startswith(arg, "--dynet-weight-decay") ||
              startswith(arg, "--dynet_weight_decay")) {
@@ -144,6 +154,19 @@ DynetParams extract_dynet_params(int& argc,
       } else {
         string a2 = get_arg(argi, argv);
         istringstream c(a2); c >> params.profiling;
+        remove_args(argc, argv, argi, 2);
+      }
+    }
+
+    // Forward only
+    else if (startswith(arg, "--dynet-forward-only") ||
+      startswith(arg, "--dynet_forward_only")) {
+      if (!has_arg(argi, argc, argv)) {
+        throw std::invalid_argument("[dynet] --dynet-forward-only expects an argument (0 for none 1 for on)");
+      }
+      else {
+        string a2 = get_arg(argi, argv);
+        istringstream c(a2); c >> params.forward_only;
         remove_args(argc, argv, argi, 2);
       }
     }
@@ -252,10 +275,18 @@ void initialize(DynetParams& params) {
   if(params.autobatch)
     cerr << "[dynet] using autobatching" << endl;
   autobatch_flag = params.autobatch;
-  
+
+  if(params.forward_only)
+    cerr << "[dynet] using forward only" << endl;
+  forward_only_flag = params.forward_only;
+
   if(params.profiling)
     cerr << "[dynet] using profiling level " << params.profiling << endl;
   profiling_flag = params.profiling;
+
+  if(params.dynamic)
+    cerr << "[dynet] using dynamic memory" << endl;
+  dynamic_mem_flag = params.dynamic;
 
   // Allocate memory
   cerr << "[dynet] allocating memory: " << params.mem_descriptor << "MB\n";
@@ -263,9 +294,9 @@ void initialize(DynetParams& params) {
 
   Device *d;
   if (gpudevices.size()) {
-    d = DYNET_NEW(Device_CPU(device_manager->num_devices(), std::string("128"), params.shared_parameters));
+    d = DYNET_NEW(Device_CPU(device_manager->num_devices(), std::string("128"), params.shared_parameters, false));
   } else {
-    d = DYNET_NEW(Device_CPU(device_manager->num_devices(), params.mem_descriptor, params.shared_parameters));
+    d = DYNET_NEW(Device_CPU(device_manager->num_devices(), params.mem_descriptor, params.shared_parameters, params.dynamic));
   }
   device_manager->add(d);
   default_device = device_manager->get(default_index);

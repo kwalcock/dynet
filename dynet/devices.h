@@ -66,7 +66,7 @@ class Device_GPU : public Device {
 class Device_CPU : public Device {
  public:
   typedef Eigen::DefaultDevice EigenDevice;
-  explicit Device_CPU(int my_id, const DeviceMempoolSizes & mb, bool shared);
+  explicit Device_CPU(int my_id, const DeviceMempoolSizes & mb, bool shared, bool dynamic);
   ~Device_CPU();
   void clear();
   CPUAllocator cpu_mem;

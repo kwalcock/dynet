@@ -1,7 +1,7 @@
 #include "dynet/mem_debug.h"
 
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
 #include <mutex>
 
 #include "dynet/aligned-mem-pool.h"
@@ -58,7 +58,9 @@ namespace dynet {
     return cgTracker.get_cumulative_count();
   };
 
-  Node::~Node() {}
+  Node::~Node() {
+    cg_ = nullptr; // Make sure we never use a stale ComputationGraph.
+  }
   size_t Node::aux_storage_size() const { return 0; }
 
   // perform the forward/backward passes in one or multiple calls
@@ -107,13 +109,15 @@ namespace dynet {
   ComputationGraph::ComputationGraph(bool batched) {
     {
       std::lock_guard<std::mutex> guard(cgTrackerMutex);
-      if (cgTracker.get_active_count() > 0) {
+      if (!default_device->pools[0]->is_dynamic() && cgTracker.get_active_count() > 0) {
         std::cerr << "Memory allocator assumes only a single ComputationGraph at a time.\n";
         throw std::runtime_error("Attempted to create >1 CG");
       }
       graph_id = cgTracker.inc_active_count();
     }
-    if (batched)
+    if (forward_only_flag && dynamic_mem_flag)
+      ee.reset(DYNET_NEW(ForwardOnlyExecutionEngine(*this)));
+    else if (batched)
       ee.reset(DYNET_NEW(BatchedExecutionEngine(*this)));
     else
       ee.reset(DYNET_NEW(SimpleExecutionEngine(*this)));
@@ -140,11 +144,7 @@ namespace dynet {
 
   void ComputationGraph::clear() {
     parameter_nodes.clear();
-    for (auto n : nodes) {
-      // Make sure we never use a stale ComputationGraph.
-      n->set_cg(nullptr);
-      DYNET_DEL(n);
-    }
+    for (auto n : nodes) DYNET_DEL(n);
     nodes.clear();
     ee->invalidate();
   }
@@ -422,17 +422,10 @@ namespace dynet {
       if (show_values) {
         Tensor value = get_value(i);
         out << "Value: ";
-        if (nan_check_only) {
-          if (value.is_valid()) {
-            out << "valid";
-          }
-          else {
-            out << "invalid";
-          }
-        }
-        else {
+        if (nan_check_only)
+          out << (value.is_valid() ? "valid" : "invalid");
+        else
           out << std::endl << value;
-        }
         out << std::endl;
       }
 
@@ -440,17 +433,10 @@ namespace dynet {
         out << "Gradient: ";
         try {
           Tensor gradient = get_gradient(i);
-          if (nan_check_only) {
-            if (gradient.is_valid()) {
-              out << "valid";
-            }
-            else {
-              out << "invalid";
-            }
-          }
-          else {
+          if (nan_check_only)
+            out << (gradient.is_valid() ? "valid" : "invalid");
+          else
             out << std::endl << gradient;
-          }
           out << std::endl;
         }
         catch(const std::runtime_error& e) {

@@ -106,13 +106,12 @@ else()
   endif()
   message("-- Optimization level: ${RELEASE_OPT_LEVEL}")
 
-  
-  set(CMAKE_CXX_FLAGS_DEBUG "-pedantic -O0 -g -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS_DEBUG "-pedantic -O0 -g -fno-omit-frame-pointer -fsanitize=leak")
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Og -g")
   if(ENABLE_NONNATIVE)
-    set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O${RELEASE_OPT_LEVEL} -march=x86-64 -DNDEBUG")
+   set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O${RELEASE_OPT_LEVEL} -march=x86-64 -DNDEBUG")
   else()
-    set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O${RELEASE_OPT_LEVEL} -march=native -DNDEBUG")
+   set(CMAKE_CXX_FLAGS_RELEASE "-funroll-loops -O${RELEASE_OPT_LEVEL} -march=native -DNDEBUG")
   endif()
 endif()
 

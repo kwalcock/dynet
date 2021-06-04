@@ -295,9 +295,13 @@ ParameterCollection::ParameterCollection() : name("/"),
     parent(nullptr) {
 }
 
-ParameterCollection::ParameterCollection(const string & my_name, ParameterCollection* my_parent, float weight_decay_lambda) :
-    name(my_name), storage(DYNET_NEW(ParameterCollectionStorage(weight_decay_lambda))), parent(my_parent) {
+ParameterCollection::ParameterCollection(float weight_decay_lambda) : name("/"),
+    storage(DYNET_NEW(ParameterCollectionStorage(weight_decay_lambda))),
+    parent(nullptr) {
 }
+
+ParameterCollection::ParameterCollection(const string & my_name, ParameterCollection* my_parent, float weight_decay_lambda) :
+    name(my_name), storage(DYNET_NEW(ParameterCollectionStorage(weight_decay_lambda))), parent(my_parent) { }
 
 ParameterCollection ParameterCollection::add_subcollection(const string & sub_name, float weight_decay_lambda) {
   if (weight_decay_lambda < 0) { weight_decay_lambda = get_weight_decay_lambda(); }
@@ -306,7 +310,8 @@ ParameterCollection ParameterCollection::add_subcollection(const string & sub_na
     int idx = collec_name_cntr[sub_name]++;
     if (idx > 0 || sub_name.size() == 0) oss << "_" << idx;
     oss << "/";
-    return ParameterCollection(oss.str(), this, weight_decay_lambda);
+    string new_name = oss.str();
+    return ParameterCollection(new_name, this, weight_decay_lambda);
   } else {
     throw std::runtime_error("Submodel name could not include '/' and '_'");
   }
@@ -858,8 +863,31 @@ float ParameterCollectionStorage::gradient_l2_norm_dev(MyDevice &dev) const {
   }
   Tensor scratch_t({(unsigned int)all_params.size()}, gradient_norm_scratch, &dev, DeviceMempool::NONE);
   Tensor sum_t({1}, gradient_norm_scratch + pi, &dev, DeviceMempool::NONE);
+
+  // Standard code
   t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum().sqrt();
-  return gradient_norm_scratch[pi];
+  float sqrt = gradient_norm_scratch[pi];
+
+  // Paranoid code
+  if (std::isnan(sqrt) || std::isinf(sqrt)) {
+    // The condition above should be very, very infrequent.
+    // Therefore capture/recalculate this intermediate value only when necessary.
+    t<0>(sum_t).device(*dev.edevice) = t<1>(scratch_t).sum();
+    float sum = gradient_norm_scratch[pi];
+
+    cerr << "sqrt=" << sqrt << ", sum=" << sum;
+    for (size_t i = 0; i < all_params.size(); ++i) {
+      float value = gradient_norm_scratch[i];
+      if (std::isnan(value) || std::isinf(value) || value < 0)
+        cerr << ", " << i << "=" << value;
+    }
+    cerr << endl;
+
+    if (!std::isnan(sum) && !std::isinf(sum) && sum < 0)
+      return 0; // Try to do something about it.
+  }
+  // Standard code
+  return sqrt;
 }
 
 #ifdef __CUDACC__

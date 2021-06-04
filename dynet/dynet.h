@@ -734,12 +734,7 @@ struct Node {
 
   inline void set_cg(ComputationGraph* cg) { cg_ = cg; }
 
-  inline ComputationGraph* get_cg() const {
-    if (cg_)
-      return cg_;
-    else
-      return NULL;
-  }
+  inline ComputationGraph* get_cg() const { return cg_; }
 
   std::vector<VariableIndex> args; /**< Dependency structure */
 
@@ -770,11 +765,11 @@ struct Node {
   explicit Node(const T& c) : args(c.begin(), c.end()), device(nullptr) {}
 
  private:
-  ComputationGraph* cg_;  // pointer to the computation graph
+  ComputationGraph* cg_ = nullptr;  // pointer to the computation graph
 
  public:
   // auxiliary memory
-  mutable void* aux_mem; /**< this will usually be null. but, if your node needs
+  mutable void* aux_mem = nullptr; /**< this will usually be null. but, if your node needs
                             to store intermediate values between forward and
                             backward, you can use store it here. request the
                             number of bytes you need from aux_storage_size().

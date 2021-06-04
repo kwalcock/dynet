@@ -137,7 +137,7 @@ void Device_GPU::reset_rng(unsigned seed) {
 }
 #endif
 
-Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared) :
+Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared, bool dynamic) :
     Device(my_id, DeviceType::CPU, &cpu_mem), shmem(mem), shared(shared) {
   if (shared) shmem = DYNET_NEW(SharedAllocator());
   kSCALAR_MINUSONE = (float*) shmem->mymalloc(sizeof(float));
@@ -151,11 +151,13 @@ Device_CPU::Device_CPU(int my_id, const DeviceMempoolSizes & mbs, bool shared) :
   // Initialize the Eigen device
   edevice = DYNET_NEW(Eigen::DefaultDevice);
 
-  // this is the big memory allocation.
-  pools[0] = DYNET_NEW(AlignedMemoryPool("CPU forward memory", (mbs.used[0] << 20), &cpu_mem));
-  pools[1] = DYNET_NEW(AlignedMemoryPool("CPU backward memory", (mbs.used[1] << 20), &cpu_mem));
-  pools[2] = DYNET_NEW(AlignedMemoryPool("CPU parameter memory", (mbs.used[2] << 20), shmem));
-  pools[3] = DYNET_NEW(AlignedMemoryPool("CPU scratch memory", (mbs.used[3] << 20), &cpu_mem));
+  // This is the big memory allocation.
+  // In order to specify dynamic, the value of expanding_unit needs to be included.
+  static const size_t expanding_unit = 1<<24;
+  pools[0] = DYNET_NEW(AlignedMemoryPool("CPU forward memory",   (mbs.used[0] << 20), &cpu_mem, expanding_unit, dynamic));
+  pools[1] = DYNET_NEW(AlignedMemoryPool("CPU backward memory",  (mbs.used[1] << 20), &cpu_mem, expanding_unit, dynamic));
+  pools[2] = DYNET_NEW(AlignedMemoryPool("CPU parameter memory", (mbs.used[2] << 20), shmem,    expanding_unit, dynamic));
+  pools[3] = DYNET_NEW(AlignedMemoryPool("CPU scratch memory",   (mbs.used[3] << 20), &cpu_mem, expanding_unit, dynamic));
 }
 
 Device_CPU::~Device_CPU() {
@@ -183,8 +185,11 @@ DeviceManager::~DeviceManager() {
 }
 
 void DeviceManager::clear() {
-  for (Device* device : devices) DYNET_DEL(device);
+  // TODO: Devices cannot be deleted at the moment because the destructor
+  // is protected
+  // for(Device* device : devices) delete device;
   devices.clear();
+  devices_map.clear();
 }
 
 void DeviceManager::add(Device* d) {

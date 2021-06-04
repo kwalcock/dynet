@@ -4,6 +4,8 @@
 #include "dynet/mem_debug.h"
 
 #include "dynet/dynet.h"
+#include "dynet/aligned-mem-pool.h"
+#include <memory>
 
 namespace dynet {
 
@@ -31,6 +33,31 @@ class ExecutionEngine {
   DeviceManager* const device_manager;
   const ComputationGraph& cg;
   VariableIndex backward_computed;
+};
+
+class ForwardOnlyExecutionEngine : public ExecutionEngine {
+public:
+  explicit ForwardOnlyExecutionEngine(const ComputationGraph& cg);
+
+  ~ForwardOnlyExecutionEngine();
+
+  void invalidate() override;
+  void invalidate(unsigned i) override;
+  const Tensor& forward() override;
+  const Tensor& forward(VariableIndex i) override;
+  const Tensor& incremental_forward() override;
+  const Tensor& incremental_forward(VariableIndex i) override;
+  const Tensor& get_value(VariableIndex i) override;
+
+  // These are not applicable for this engine and are not implemented.
+  const Tensor& get_gradient(VariableIndex i) override;
+  void backward(bool full = false) override;
+  void backward(VariableIndex from_where, bool full = false) override;
+private:
+  void not_implemented(char* method, char* file, int line) const;
+  std::vector<Tensor> node_fxs;
+  VariableIndex num_nodes_evaluated;
+  DynamicCPUMemoryPool* memoryPool;
 };
 
 class SimpleExecutionEngine : public ExecutionEngine {

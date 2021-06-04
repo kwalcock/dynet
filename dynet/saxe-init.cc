@@ -18,8 +18,11 @@ void orthonormal_random(unsigned dd, float g, Tensor& x) {
   t.d = Dim({dd, dd});
   t.v = DYNET_NEW_ARR(float[dd * dd]);
   normal_distribution<float> distribution(0, 0.01);
-  auto b = [&] () {return distribution(*rndeng);};
-  generate(t.v, t.v + dd*dd, b);
+  {
+    const std::lock_guard<std::mutex> rndengLock(rndengMutex);
+    auto b = [&]() {return distribution(*rndeng); };
+    generate(t.v, t.v + dd * dd, b);
+  }
   Eigen::JacobiSVD<Eigen::MatrixXf> svd(mat(t), Eigen::ComputeFullU);
   mat(x) = svd.matrixU();
   DYNET_DEL_ARR(t.v);
