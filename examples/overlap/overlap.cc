@@ -47,22 +47,7 @@ public:
   }
 };
 
-int main(int _argc, char** _argv) {
-  const int threadCount = 2;
-
-  std::cout << "Program started for " << threadCount << " threads!" << std::endl;
-
-  char* args[] = {
-    "",
-    "--dynet-seed", "10",
-    "--dynet-mem", "1",
-    "--dynet-dynamic-mem", "1"
-  };
-  char** argv = &args[0];
-  int argc = 7;
-
-  dynet::initialize(argc, argv);
-
+void run(int threadCount) {
   const int layers = 2;
   const unsigned int inputDim = 3;
   const unsigned int hiddenDim = 10;
@@ -85,5 +70,25 @@ int main(int _argc, char** _argv) {
     for (size_t i = 1; i < results[t].size(); ++i)
       if (abs(results[t][0] - results[t][i]) >= 0.0001)
         std::cerr << "Parallel test failed!" << std::endl;
+}
+
+int main(int _argc, char** _argv) {
+  const int threadCount = 3;
+
+  std::cout << "Program started for " << threadCount << " threads!" << std::endl;
+
+  char* args[] = {
+    "",
+    "--dynet-seed", "10",
+    "--dynet-mem", "1",
+    "--dynet-dynamic-mem", "1"
+  };
+  char** argv = &args[0];
+  int argc = 7;
+
+  dynet::initialize(argc, argv);
+
+  for (int i = 0; i < 10; i++)
+    run(threadCount);
   std::cout << "Program finished!" << std::endl;
 }

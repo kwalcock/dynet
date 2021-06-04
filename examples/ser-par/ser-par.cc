@@ -27,9 +27,7 @@ void myDebugMem(const char* file, int line) {
 //  debugMem(file, line);
 }
 
-int main(int _argc, char** _argv) {
-  MemDebug myMemDebug;
-
+bool run(int _argc, char** _argv) {
   myDebugMem(__FILE__, __LINE__);
 
   unsigned int seed = 42; // For repeatability, this is used repeatedly.
@@ -171,13 +169,21 @@ int main(int _argc, char** _argv) {
     }
     std::cout << std::endl;
   }
+  return failed;
+}
 
-  myDebugMem(__FILE__, __LINE__);
-  dynet::cleanup();
-  myDebugMem(__FILE__, __LINE__);
+int main(int _argc, char** _argv) {
+  //  MemDebug myMemDebug;
+  bool failed = run(_argc, _argv);
+
   if (failed)
     std::cerr << "Program failed!" << std::endl;
   else
     std::cerr << "Program passed!" << std::endl;
+
+  myDebugMem(__FILE__, __LINE__);
+  dynet::cleanup();
+  myDebugMem(__FILE__, __LINE__);
+
   std::cout << "Program finished!" << std::endl;
 }
