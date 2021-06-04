@@ -173,7 +173,9 @@ bool run(int _argc, char** _argv) {
 }
 
 int main(int _argc, char** _argv) {
-  //  MemDebug myMemDebug;
+  dynet::MemDebug myMemDebug;
+  // Set environment variable MALLOC_TRACE to check this.
+  myMemDebug.leak_malloc();
   bool failed = run(_argc, _argv);
 
   if (failed)
