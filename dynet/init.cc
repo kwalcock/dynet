@@ -288,6 +288,11 @@ void initialize(DynetParams& params) {
     cerr << "[dynet] using dynamic memory" << endl;
   dynamic_mem_flag = params.dynamic;
 
+  if (forward_only_flag && dynamic_mem_flag) {
+    cout << "Eigen is prepared to use multiple threads." << std::endl;
+    Eigen::initParallel();
+  }
+
   // Allocate memory
   cerr << "[dynet] allocating memory: " << params.mem_descriptor << "MB\n";
   int default_index = 0;
